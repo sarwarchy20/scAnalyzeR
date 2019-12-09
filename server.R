@@ -1,14 +1,9 @@
-
-#source("E:/seurat/Seurat_3 doc/ui.R")
-#use_python("C:/Program Files/Python37/python.exe")
-
 source("ui.R")
 source("install_dependencies_scAnalyzer.R")
 source("load_packages.r")
 
 #use_python("C:/Users/GSC/AppData/Local/conda/conda/envs/r-reticulate/python.exe")
 # ************************************************ Global section ***************************************************
-library("Matrix")
 #library(survival)
 #library("leiden")
 #library("igraph")
