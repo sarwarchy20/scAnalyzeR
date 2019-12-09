@@ -1,5 +1,5 @@
 
-
+library(shinyjs)
 
 #library(Rmagic)
 #setwd("E:/Shiny R/sc-vieweR1")
