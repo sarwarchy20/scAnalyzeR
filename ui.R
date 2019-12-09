@@ -7,7 +7,7 @@
 
 ui <-shinyUI(
   fluidPage(
-    #useShinyjs(),
+    useShinyjs(),
     tags$head(
       tags$style(HTML("@import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');
                       h1 {
