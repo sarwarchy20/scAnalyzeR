@@ -14,7 +14,7 @@ cranPackages = c(
 installIfNeeded(cranPackages)
 
 if (!requireNamespace("Seurat", quietly = TRUE))
-  install.packages("Seurat")
+  BiocManager::install("Seurat")
 
 if (!requireNamespace("fgsea", quietly = TRUE))
   BiocManager::install("fgsea")
