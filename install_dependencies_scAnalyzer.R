@@ -1,3 +1,5 @@
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
 
 installIfNeeded = function (packages, installFn = install.packages) {
   newPackages <- packages[!(packages %in% installed.packages()[, "Package"])]
@@ -12,10 +14,7 @@ cranPackages = c(
 installIfNeeded(cranPackages)
 
 if (!requireNamespace("Seurat", quietly = TRUE))
-  install.packages("BiocManager")
-
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
+  install.packages("Seurat")
 
 if (!requireNamespace("fgsea", quietly = TRUE))
   BiocManager::install("fgsea")
