@@ -12,7 +12,6 @@ library(RColorBrewer)
 library(viridis)
 library(autoplotly)
 library("ggpubr")
-library(DT)
 #setwd("E:/Shiny R/sc-vieweR1")
 # **************************************** User Interafce of sc-AnalyzeR *********************************************
 
