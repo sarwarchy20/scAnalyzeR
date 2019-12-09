@@ -2,7 +2,6 @@
 #library(pryr)
 
 library(shiny)
-library(shinyjs)
 library(ggfortify)
 library(ggplot2)
 library("gplots")
