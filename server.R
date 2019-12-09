@@ -65,7 +65,7 @@ server <- function(input, output,session) {
                         # header = TRUE,
                         # row.names = 1)
       #setwd("E:/seurat/Seurat_3 doc/www/")
-      pbmc.data_2 <- Read10X(data.dir = "sample_data/hg19/")
+      pbmc.data_2 <- Read10X(data.dir = "sample_data/hg19")
       data.matrix(pbmc.data_2)
       
     }
