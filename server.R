@@ -1,6 +1,7 @@
-source("ui.R")
+
 source("install_dependencies_scAnalyzer.R")
 source("load_packages.r")
+source("ui.R")
 
 #use_python("C:/Users/GSC/AppData/Local/conda/conda/envs/r-reticulate/python.exe")
 # ************************************************ Global section ***************************************************
