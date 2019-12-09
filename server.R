@@ -65,7 +65,7 @@ server <- function(input, output,session) {
                         # header = TRUE,
                         # row.names = 1)
       #setwd("E:/seurat/Seurat_3 doc/www/")
-      pbmc.data_2 read.csv("sample_data/Combined_expression.csv")
+      pbmc.data_2<- read.csv("sample_data/Combined_expression.csv")
       pbmc.data_2
       
     }
