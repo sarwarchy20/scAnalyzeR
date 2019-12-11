@@ -1,7 +1,7 @@
 
 source("install_dependencies_scAnalyzer.R")
 source("load_packages.R")
-#source("ui.R")
+source("ui.R")
 
 #use_python("C:/Users/GSC/AppData/Local/conda/conda/envs/r-reticulate/python.exe")
 # ************************************************ Global section ***************************************************
@@ -2126,3 +2126,5 @@ input_paths<- reactive({
   })
   
 } # End Server function
+            
+                    shinyApp(ui = ui, server = server)
