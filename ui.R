@@ -114,12 +114,12 @@ ui <-shinyUI(
                             radioButtons("species_name", "Species",
                                          choices = c('Human' = "species_human",'Mouse' = "species_mouse"),selected = "species_mouse"),
                             radioButtons("sor_data", "Source Dataset",
-                                         choices = c('Use sample dataset(Mouse)' = "sam_data",'Upload dataset' = "upd_data",
+                                         choices = c('Use sample dataset(Mouse)' = "sam_data",'Upload dataset(.csv/.txt)' = "upd_data",
                                                      'Upload files(cellranger output)' = "data_10x"),selected = ""),
                                                       
                                           conditionalPanel(
                                                 condition = "input.sor_data == 'upd_data'", 
-                                                fileInput("file1", label = "Choose a File(.csv/.txt)",
+                                                fileInput("file1", label = "Choose a File",
                                                 multiple = FALSE,
                                                 accept = ".csv"),
                                                 #accept = c("text/csv",
