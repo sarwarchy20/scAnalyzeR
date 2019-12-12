@@ -20,6 +20,7 @@ source("ui.R")
 
 
 #hg<-new2_data[filenames,]
+#By default, Shiny limits file uploads to 5MB per file.
 # Increase the uploading file size up to 30 MB
 #options(shiny.maxRequestSize = 30*1024^2)
 if(Sys.getenv('SHINY_PORT') == "") options(shiny.maxRequestSize=10000*1024^2)
@@ -80,7 +81,7 @@ server <- function(input, output,session) {
         n <- 1
         
         for (i in 1:n) {
-      pbmc.data_2 <- read.csv("sample_data/Combined_expression.csv", header = TRUE,
+      pbmc.data_2 <- read.csv("sample_data/mouse_ovarian.csv", header = TRUE,
                               row.names = 1)
       
       # Increment the progress bar, and update the detail text.
@@ -90,6 +91,35 @@ server <- function(input, output,session) {
       }
       })
       pbmc.data_2
+      
+    }
+    
+    else if(input$sor_data == "data_10x")
+    {
+      req(input$file_10x)
+      #print(input$file_10x$datapath)
+      #print(input$file_10x$datapath[1])
+      #print(str_sub(input$file_10x$datapath[1], end=-6))
+      
+      #temp1<- read.delim("filtered_gene_bc_matrices/hg19/matrix.mtx")
+      
+      #write.table(temp1,"filtered_gene_bc_matrices/hg19/ttt_3.tsv",row.names =F,quote = F)
+      
+      
+      p1<- str_sub(input$file_10x$datapath[1], end=-6)
+      p11<- paste(p1, sep = "", "barcodes.tsv")
+      file.rename(from =input$file_10x$datapath[1], to = p11)
+      
+      q1<- str_sub(input$file_10x$datapath[2], end=-6)
+      q11<- paste(q1, sep = "", "genes.tsv")
+      file.rename(from =input$file_10x$datapath[2], to = q11)
+      
+      r1<- str_sub(input$file_10x$datapath[3], end=-6)
+      r11<- paste(r1, sep = "", "matrix.mtx")
+      file.rename(from =input$file_10x$datapath[3], to = r11)
+      
+      pbmc.data_10x<- Read10X(data.dir = str_sub(input$file_10x$datapath[1], end=-6))
+      data.matrix(pbmc.data_10x)
       
     }
     
@@ -438,27 +468,27 @@ server <- function(input, output,session) {
   JackStrawPlot(object = jplot, dims = 1:input$pc_cells)
  })
  
- output$tsnep<- renderPlot({
-   if(is.null(scdata())) return()
-   else if(input$ck_tsne == FALSE) return()
+ #output$tsnep<- renderPlot({
+  # if(is.null(scdata())) return()
+   #else if(input$ck_tsne == FALSE) return()
    
-   if(input$tsn_genes == "tsn_hvg"){
-     var_gene<- VariableFeatures(object = hv_pbmc())
-     m_sub<- GetAssayData(object = scdata(), slot = "scale.data")[var_gene,] # used scaled data
-   }
-   else 
-   {
+   #if(input$tsn_genes == "tsn_hvg"){
+    # var_gene<- VariableFeatures(object = hv_pbmc())
+    # m_sub<- GetAssayData(object = scdata(), slot = "scale.data")[var_gene,] # used scaled data
+   #}
+   #else 
+  # {
      #all_genes <- rownames(x = hv_pbmc())
-     m_sub<- GetAssayData(object = scdata(), slot = "scale.data") #[all_genes,] # used scaled data
+   #  m_sub<- GetAssayData(object = scdata(), slot = "scale.data") #[all_genes,] # used scaled data
      
-   }
+   #}
    
-   tm_sub<- t(m_sub)
-   colour1 = rainbow(length(rownames(tm_sub)))
-   pt<-Rtsne(tm_sub,dims=2, perplexity=1,check_duplicates = F)
-   tsne_plot<- data.frame(x = pt$Y[,1], y = pt$Y[,2], col = colour1)
-   ggplot(tsne_plot) + geom_point(aes(x=x, y=y), col=colour1, size = 3)
- })
+   #tm_sub<- t(m_sub)
+   #colour1 = rainbow(length(rownames(tm_sub)))
+   #pt<-Rtsne(tm_sub,dims=2, perplexity=1,check_duplicates = F)
+   #tsne_plot<- data.frame(x = pt$Y[,1], y = pt$Y[,2], col = colour1)
+   #ggplot(tsne_plot) + geom_point(aes(x=x, y=y), col=colour1, size = 3)
+# })
  
 # PCA Heatmap
  output$pc_hplot<-renderPlot({
@@ -491,7 +521,7 @@ server <- function(input, output,session) {
      ct_data<- FindClusters(object = ct_data, graph.name = NULL,
                   modularity.fxn = 1, initial.membership = NULL, weights = NULL,
                   node.sizes = NULL, resolution = input$clus_restn, algorithm = algo_type, n.start = 10,
-                  n.iter = input$clus_itr, random.seed = 0, temp.file.location = NULL,
+                  n.iter = 10, random.seed = 0, temp.file.location = NULL,
                   edge.file.name = NULL, verbose = TRUE)
      
      #ct_data<- RunUMAP(object = ct_data, dims = input$clus_low:input$clus_upper)
