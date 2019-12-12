@@ -80,7 +80,7 @@ server <- function(input, output,session) {
         n <- 1
         
         for (i in 1:n) {
-      pbmc.data_2 <- read.csv("3k_pbmc.csv", header = TRUE,
+      pbmc.data_2 <- read.csv("sample_data/Combined_expression.csv", header = TRUE,
                               row.names = 1)
       
       # Increment the progress bar, and update the detail text.
