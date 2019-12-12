@@ -112,15 +112,16 @@ ui <-shinyUI(
                sidebarPanel(id = "data_source", width = 4,
                             tags$style("#data_source{background-color:#54F8EC;}"),
                             radioButtons("species_name", "Species",
-                                         choices = c('Human' = "species_human",'Mouse' = "species_mouse"),selected = "species_human"),
+                                         choices = c('Human' = "species_human",'Mouse' = "species_mouse"),selected = "species_mouse"),
                             radioButtons("sor_data", "Source Dataset",
-                                         choices = c('Use sample dataset(Human-PBMC)' = "sam_data",'Upload dataset' = "upd_data"),selected = ""),
+                                         choices = c('Use sample dataset(Mouse)' = "sam_data",'Upload dataset' = "upd_data",
+                                                     'Upload files(cellranger output)' = "data_10x"),selected = ""),
                                                       
                                           conditionalPanel(
                                                 condition = "input.sor_data == 'upd_data'", 
-                                                fileInput("file1", "Choose a File(.csv/.txt)"),
+                                                fileInput("file1", label = "Choose a File(.csv/.txt)",
                                                 multiple = FALSE,
-                                                accept = ".csv",
+                                                accept = ".csv"),
                                                 #accept = c("text/csv",
                                                 #"text/comma-separated-values,text/plain",
                                                 #".csv"),
@@ -146,8 +147,16 @@ ui <-shinyUI(
                                                 # Horizontal line ----
                                                 #tags$hr(),
                                                 #checkboxInput('upload_summary',p('Uploaded Data Summary')),
-                                                tags$hr()
-                                                )
+                                                #tags$hr()
+                                                ),
+                            
+                                                conditionalPanel(
+                                                          condition = "input.sor_data == 'data_10x'", 
+                                                          fileInput("file_10x", label = "Choose 3 files (barcodes.tsv, genes.tsv, matrix.mtx)",
+                                                          multiple = TRUE
+                                                          )
+                                                      )
+                                          #)
                                                       #uiOutput("source_UI"),
                                                    
                                                       # Input: Select number of rows to display ----
@@ -248,7 +257,7 @@ ui <-shinyUI(
                 ),
                 tags$hr(),
                   checkboxInput('hvg_disp',p('Show Highly Variable Genes')),
-                  checkboxInput('high_hvg',p('Download Highly Variable Genes')),
+                  checkboxInput('high_hvg',p('Download Highly Variable Genes(as a .csv file)')),
                   conditionalPanel('input.high_hvg==1',
                                 downloadButton("hvg_download", "Download"))
     ), # # end of sidebarPanel for Normalization
@@ -294,12 +303,12 @@ ui <-shinyUI(
                                                   column(width = 8, numericInput("pc_hmap_cells", "Number of Cells:", 500, min = 2, max = Inf)),
                                                   br(), br(), 
                                                   actionButton('pc_hmap_ok', 'Show plot')
-                                ),
-                             checkboxInput('ck_tsne',p('t-SNE Plot')),
-                             conditionalPanel('input.ck_tsne == 1',
-                                              radioButtons("tsn_genes", " ",
-                                                           choices = c('High Variable Genes' = "tsn_hvg",'All Genes' = "tsn_all"),selected = "tsn_hvg")
-                               )
+                                )
+                             #,checkboxInput('ck_tsne',p('t-SNE Plot')),
+                             #conditionalPanel('input.ck_tsne == 1',
+                                              #radioButtons("tsn_genes", " ",
+                                                           #choices = c('High Variable Genes' = "tsn_hvg",'All Genes' = "tsn_all"),selected = "tsn_hvg")
+                               #)
                                  
     ),# end of sidebarPanel for PCA 
     column(width =6,br(), br(),h4(htmlOutput("pc_text"))),
@@ -307,8 +316,8 @@ ui <-shinyUI(
     column(width = 6, br(),verbatimTextOutput("pca_list")),
     column(width = 8, br(), plotOutput("pc_jac_show")),
     column(width = 6, br(), plotOutput("pc_elbow_plot")),
-    column(width =10, br(), br(), plotOutput("pc_hplot")),
-    column(width = 8, br(), plotOutput("tsnep"))
+    column(width =10, br(), br(), plotOutput("pc_hplot"))
+    #,column(width = 8, br(), plotOutput("tsnep"))
     ),# end of tabPanel for PCA
       tabPanel("Clustering", 
                img(src = "line_font.png"),
@@ -319,7 +328,7 @@ ui <-shinyUI(
                                                             column(width=4,numericInput("clus_low", "Lower limit",1,min = 1, max = Inf)),
                                                             column(width=4,numericInput("clus_upper", "Upper limit",2,min = 1, max = Inf)),
                                                             column(width =8, numericInput("clus_restn","Resolution",0.8,min=0,max = Inf)),
-                                                            column(width =8, numericInput("clus_itr","Iterations",10,min=1,max = Inf)),
+                                                            #column(width =8, numericInput("clus_itr","Iterations",10,min=1,max = Inf)),
 							                                              selectInput('clus_algo','Select Algorithm',choices = c("Louvain Algorithm(LA)", 
 							                                                                                                     "Multilevel LA", "SLM algorithm",
 							                                                                                                     "Leiden algorithm"),selected = 'Louvain Algorithm(LA)'),
