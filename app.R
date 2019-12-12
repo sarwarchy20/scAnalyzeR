@@ -23,7 +23,7 @@ source("ui.R")
 #By default, Shiny limits file uploads to 5MB per file.
 # Increase the uploading file size up to 30 MB
 #options(shiny.maxRequestSize = 30*1024^2)
-if(Sys.getenv('SHINY_PORT') == "") options(shiny.maxRequestSize=10000*1024^2)
+if(Sys.getenv('SHINY_PORT') == "") options(shiny.maxRequestSize=10240*1024^2)
 #That way the max limit is 10GB when the app is run locally and 5MB when run from the server.
 f_total_col = 0 # total number of column of filtered dataset
 mito.genes<-c()
