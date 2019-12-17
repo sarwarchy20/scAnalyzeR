@@ -35,7 +35,7 @@ To run the app on your local computer, use RStudio to run the following code and
 `shiny::runApp("~/scAnalyzeR")`
 
 # Interface with user manual
-
+`https://github.com/sarwar-chy/scAnalyzeR/blob/master/user_manual/User_manual_scAnaluzeR.pdf`
 
 
 
