@@ -28,9 +28,9 @@ or <br/>
 `shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.tar.gz")` <br/>
 `shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip")` <br/>
 
-**If you want to use it locally, you can simply clone this(https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip) repository and run the app using RStudio.** <br/>
-To run the app on your local computer, use RStudio to run the following code and replace ~ with the location of your scAnalyzeR folder.<br/>
-`shiny::runApp("~/scAnalyzeR")`
+**If you want to use it locally, you can simply clone this(https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip) repository as well as unzip it and run the app using RStudio.** <br/>
+To run the app on your local computer, use RStudio to run the following code and replace ~ with the location of your scAnalyzeR-master folder.<br/>
+`shiny::runApp('~/scAnalyzeR-master/')`
 <br/>
 # Interface with user manual <br/>
 https://github.com/sarwar-chy/scAnalyzeR/blob/master/user_manual/User_manual_scAnaluzeR.pdf
