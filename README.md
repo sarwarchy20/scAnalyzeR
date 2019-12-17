@@ -24,7 +24,7 @@ Now, your machine is ready for running the scAnalyzeR app.<br/>
 Run the following code of line on RStudio.<br/>
 `shiny::runGitHub("scAnalyzeR", "sarwar-chy")` <br/>
 or <br/>
-# Run a tar or zip file directly <br/>
+**Run a tar or zip file directly** <br/>
 `shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.tar.gz")` <br/>
 `shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip")` <br/>
 
