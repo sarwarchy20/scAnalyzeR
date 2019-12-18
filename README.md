@@ -5,7 +5,7 @@
 Firstly, you need to download and install the following softwares(install R then RStudio):
 ###### Download and install R and RStudio on your machine,
 `1. Download and install R (v-3.6.1 or above):` https://cran.r-project.org/ <br/>
-`2. Download and install RStudio: RStudio (v-1.1.456 or above):` https://rstudio.com/products/rstudio/ 
+`2. Download and install RStudio: RStudio (v-1.1.456 or above):` https://rstudio.com/products/rstudio/download/ 
 
 After installed the R and RStudio on your machine , then you also need to install the shiny package. 
 Please run the following code on RStudio to install the shiny package: <br/>
