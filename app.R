@@ -223,7 +223,17 @@ server <- function(input, output,session) {
         {
           mito.genes<- grep(pattern = "^mt-", x = rownames(GetAssayData(object = pbmc())), value = TRUE)
         }
-        return(as.matrix(GetAssayData(object = pbmc())[mito.genes,1:2]))
+        
+        mt_data<- data.matrix(GetAssayData(object = pbmc()[mito.genes,]))
+
+        mtd2<- data.frame(rowSums(mt_data))
+        
+        mtd2<- mtd2 %>% 
+          dplyr:: rename(
+            Total_Count = rowSums.mt_data.
+          )
+        mtd2
+       
       }
       else 
         return()
@@ -307,8 +317,8 @@ server <- function(input, output,session) {
 # ------------------------------------------------------------- Normalization -----------------------------------
   
   nor_pbmc<-reactive({
-    if(is.null(pbmcf())) return()
-    else if(input$nor_ok ==FALSE) return()
+    #if(is.null(pbmcf())) return()
+    if(input$nor_ok ==FALSE) return()
     isolate({
     nor_data<-NormalizeData(object = pbmcf(), normalization.method = input$nor_method, 
                           scale.factor = input$nor_factor,display.progress = TRUE)
@@ -364,8 +374,18 @@ server <- function(input, output,session) {
     if(is.null(hv_pbmc())) return()
     else if(input$hvg_ok == FALSE) return()
     else if(input$hvg_disp == FALSE) return() 
-    temp_data<-GetAssayData(object = hv_pbmc())[VariableFeatures(object = hv_pbmc()),1:2]
-    data.matrix(temp_data)
+    #h_info<-as.matrix(HVFInfo(object = hv_pbmc()[VariableFeatures(object = hv_pbmc()),]))
+    
+    h_info<- as.data.frame(HVFInfo(object = hv_pbmc()[VariableFeatures(object = hv_pbmc()),]))
+    h_info<- h_info[order(-h_info$variance.standardized),]
+    
+    h_info<- h_info %>% 
+      dplyr:: rename(
+        Standardized.variance = variance.standardized
+      )
+    h_info
+    #temp_data<-GetAssayData(object = hv_pbmc())[VariableFeatures(object = hv_pbmc()),1:2]
+    #data.matrix(temp_data)
   })
   # Download High variable genes data set.........
   output$hvg_download<- downloadHandler(
@@ -393,8 +413,8 @@ server <- function(input, output,session) {
   })
 #----------------------------------------Seurat PCA--------------------------
   pc_pbmc<-reactive({
-    if(is.null(hv_pbmc())) return()
-    else if(input$com_pca==FALSE) return()
+    #if(is.null(hv_pbmc())) return()
+    if(input$com_pca==FALSE) return()
    isolate({
     
      if(input$pc_genes == "pc_hvg")
@@ -424,7 +444,7 @@ server <- function(input, output,session) {
       RunPCA(object = scdata(), features = all.genes,
              npcs = input$pc_cells, verbose = FALSE)
     }
-    })
+    }) # end isolate
   })
   # after PCA notification 
   output$pc_text<-renderUI({
@@ -1507,7 +1527,7 @@ input_paths<- reactive({
    if(is.null(output_paths())) return(NULL)
    else if(input$path_top_plot == FALSE) return(NULL) 
    
-   isolate({
+   #isolate({
   if(input$path_select == "path_pos"){
   ggdat_t <- output_paths() %>% as.data.frame %>% as_data_frame %>% arrange(padj)
   ftr_res<- dplyr::filter(ggdat_t,NES>=0, padj<=input$path_qval)
@@ -1521,7 +1541,7 @@ input_paths<- reactive({
     ftr_res<- dplyr::filter(ggdat_t,NES<0,padj<=input$path_qval)
     tt<- ": Downregulated"
   }
-   }) # end isolation
+   #}) # end isolation
    
    # select top paths
   ggdat<- ftr_res %>% head(input$path_top) %>% mutate(pathway =fct_inorder(pathway))
@@ -2073,7 +2093,9 @@ input_paths<- reactive({
     
     else if (input$tray_input_opt == "tray_write_inp")
     {
-      textAreaInput("tray_genelist","Gene List", "Please write gene sybmols: one gene per line")
+      #textAreaInput("tray_genelist","Gene List", "Please write gene sybmols: one gene per line")
+      textAreaInput("tray_genelist","Write Gene List", width = "200px", height = "150px", 
+                    placeholder = "Please write gene sybmols: one gene per line")
       
     }
     
@@ -2187,34 +2209,38 @@ input_paths<- reactive({
   
   # .....pseudotemporal plot
   output$tray_pseu_plot<-renderPlot({
+    
     if(input$tray_pseu_set== F) return()
-    else if(is.null(tray_input_genes())) return()
-    else if(input$tray_submit == F) return()
-    isolate ({
+    #else if(is.null(tray_input_genes())) return()
+    if(input$tray_submit == F) return()
+    
     #print(tray_input_genes())
-    #genex1<- c("GAPDH", "TP53")
     ptdata<- tray_data()
+    #genex1<- c("GAPDH", "TP53")
+    isolate({
+      
+      withProgress(message = 'Generating plot...', value = 0, {
+        
+        n <- 1
+        
+        for (i in 1:n) {
     plot_pseudotime_heatmap(ptdata[tray_input_genes(),],
                             num_clusters = input$tray_pseu_clst, 
                             cores = 4,
                             hmcols = NULL,
                             show_rownames = T)
+          # Increment the progress bar, and update the detail text.
+          incProgress(10, detail = paste("Completed ", i*100,"%"))
+          # Pause for 0.1 seconds to simulate a long computation.
+          Sys.sleep(4)
+        }
+      })
     })
     
   })
   
   # --------- End Trajectory Analysis
-  
-  output$mytable = DT::renderDataTable({
-    data1()
-  })
-  
-  output$hvgene = DT::renderDataTable({
-    if(input$highvg == 1)
-    hg[,1:10]
-    else 
-      return(NULL)
-  })
+
   
 } # End Server function
 
