@@ -143,7 +143,7 @@ ui <-shinyUI(
                                                              choices = c(None = "",
                                                                          "Double Quote" = '"',
                                                                          "Single Quote" = "'"),
-                                                             selected = '"'),
+                                                             selected = '"')
                                                 # Horizontal line ----
                                                 #tags$hr(),
                                                 #checkboxInput('upload_summary',p('Uploaded Data Summary')),
@@ -250,13 +250,15 @@ ui <-shinyUI(
                   tags$style(HTML('#hvg_ok{background-color:#8B0000;color:white;}'))
                 ),
                   actionButton('hvg_ok', 'Submit'),
-                tags$hr(),  
+                tags$hr(), 
+                checkboxInput('hvg_disp',p('Show Highly Variable Genes')),
+                tags$hr(),
                 checkboxInput('hfp_disp',p('Variable Features Plot')),
                 conditionalPanel('input.hfp_disp==1',"",
                                  numericInput("top_hfp", "Top Features:", 10, min = 1, max = Inf)
                 ),
                 tags$hr(),
-                  checkboxInput('hvg_disp',p('Show Highly Variable Genes')),
+                  
                   checkboxInput('high_hvg',p('Download Highly Variable Genes(as a .csv file)')),
                   conditionalPanel('input.high_hvg==1',
                                 downloadButton("hvg_download", "Download"))
@@ -455,7 +457,6 @@ ui <-shinyUI(
     
     #------------------- Dynamic PCA -------------------
     
-    #tabPanel("Data Summary", br(), br(), DT::dataTableOutput("mytable")),
     tabPanel("Dynamic PCA",
              img(src = "line_font1.png"),
              sidebarPanel(id  = "dypca_slid", width = 4, 
