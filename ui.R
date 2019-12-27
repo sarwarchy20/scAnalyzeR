@@ -104,7 +104,8 @@ ui <-shinyUI(
                tags$br(),
                p('  Welcome to scAnalyzeR!'),
                tags$br(),
-               "  Please follow the instructions to perform your task successfully:"
+               "  Please follow the instructions to perform your task successfully:",
+               a("User manual ",target="_blank",href="User_manual_scAnalyzeR.pdf")
                #verbatimTextOutput("inst")
                ),
       tabPanel("Upload Dataset", 
@@ -288,6 +289,8 @@ ui <-shinyUI(
                                                
                                   tags$hr(),
                                  checkboxInput('ck_pca',p('PCA Plot')),
+                                    #tags$hr(),
+                                 checkboxInput('ck_tsne_plot',p('t-SNE Plot')),
                                                #tags$hr(),
                                  checkboxInput('pc_print',p('Print PCA')),
                                               # tags$hr(),
@@ -315,6 +318,7 @@ ui <-shinyUI(
     ),# end of sidebarPanel for PCA 
     column(width =6,br(), br(),h4(htmlOutput("pc_text"))),
     column(width =8, br(), br(), plotOutput("sc_pca_plot")),
+    column(width =8, br(), br(), plotOutput("pc_tsne_plot")),
     column(width = 6, br(),verbatimTextOutput("pca_list")),
     column(width = 8, br(), plotOutput("pc_jac_show")),
     column(width = 6, br(), plotOutput("pc_elbow_plot")),
@@ -507,7 +511,7 @@ ui <-shinyUI(
     
     
     # -------------------------------------------------- Start Pathways Analysis------------------------------------------
-    tabPanel("Pathways Analysis",
+    tabPanel("Pathway Analysis",
              img(src = "line_font.png"),
              sidebarPanel(id = "path_slid" ,width = 4,
                           tags$style("#path_slid{background-color:#EEA6F4;}"),
