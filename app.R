@@ -460,6 +460,16 @@ server <- function(input, output,session) {
   #PCAPlot(object = pc_pbmc(), dim.1 = 1, dim.2 = 2)
    DimPlot(object = pc_pbmc(), reduction = "pca")
 })
+ 
+ #PC t-SNE plot
+ output$pc_tsne_plot<-renderPlot({
+   if(is.null(pc_pbmc())) return() 
+   else if(input$ck_tsne_plot==FALSE) return() #hide("sc_pca_plot")
+   t_tsne<- RunTSNE(object = pc_pbmc(), reduction = "pca", 
+           dims.use = 1:input$pc_cells, do.fast = TRUE)
+   DimPlot(object = t_tsne, reduction = "tsne")
+   
+ })
 
 # PCA Elbow plot
  output$pc_elbow_plot<-renderPlot({
