@@ -10,7 +10,7 @@ installIfNeeded = function (packages, installFn = install.packages) {
 cranPackages = c(
   "devtools", "Rtsne", "igraph", "visNetwork", "shiny", "htmltools", "shinyjs", "htmlwidgets", "plotly", "ggpubr", "autoplotly",
   "dplyr","viridis", "RColorBrewer", "dendextend", "plotly","tsne", "gplots","ggplot2" ,"ggpubr", "ggfortify", "dplyr","heatmap3","DT","heatmaply",
-  "tidyverse","Matrix")
+  "tidyverse","Matrix", "cowplot")
 
 installIfNeeded(cranPackages)
 
