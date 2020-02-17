@@ -153,7 +153,7 @@ ui <-shinyUI(
                                          
                                          conditionalPanel(
                                            condition = "input.sor_data == 'data_10x'", 
-                                           fileInput("file_10x", label = "Choose 3 files (barcodes.tsv, genes.tsv, matrix.mtx)",
+                                           fileInput("file_10x", label = "Choose 3 files (barcodes.tsv, genes.tsv, and matrix.mtx)",
                                                      multiple = TRUE
                                            )
                                          )
@@ -176,10 +176,10 @@ ui <-shinyUI(
                             sidebarPanel(id= "prep_pro" ,width = 4,
                                          tags$style("#prep_pro{background-color:#EED4F9;}"),
                                          h4("Create Dataset "),
-                                         " Keep all genes expressed in >= MC cells and Keep all cells with at
-                                         least MFs detected genes",
-                                         numericInput("cells", "Minimum no. of cells(MC):", 3, min = 1, max = Inf),
-                                         numericInput("genes", "Minimum no. of features(MFs):", 200, min = 1, max = Inf),
+                                         " Keep all genes expressed in MCs cells and Keep all cells with at
+                                         least MGs detected genes",
+                                         numericInput("cells", "Minimum no. of cells(MCs):", 3, min = 1, max = Inf),
+                                         numericInput("genes", "Minimum no. of genes(MGs):", 200, min = 1, max = Inf),
                                          
                                          tags$head(
                                            tags$style(HTML('#ok{background-color:#00008B;color:white;}'))
@@ -200,11 +200,11 @@ ui <-shinyUI(
                                          tags$hr(),
                                          checkboxInput('fth',h6("  Filtering Cells")),
                                          conditionalPanel('input.fth==1',
-                                                          " filter cells that have unique feature counts over nFeature_RNA(>) and 
-                                                          less than nFeature_RNA(<)",
-                                                          numericInput("lt", "nFeature_RNA(>):", 200, min = -Inf, max = Inf),
-                                                          numericInput("ut", "nFeature_RNA(<):", 2500, min = 1, max = Inf),
-                                                          numericInput("pmt", "MT gene % :", 2, min = 0 , max = Inf),
+                                                          " Filter(discard) cells that have unique Gene counts over nFeature_RNA(>) or 
+                                                          less than nFeature_RNA(<), and  mitochondrial counts above percent.mt(>)",
+                                                          numericInput("lt", "nFeature_RNA(<):", 200, min = -Inf, max = Inf),
+                                                          numericInput("ut", "nFeature_RNA(>):", 2500, min = 1, max = Inf),
+                                                          numericInput("pmt", "percent.mt(>):", 5, min = 0 , max = Inf),
                                                           tags$head(
                                                             tags$style(HTML('#th{background-color:#8B0000;color:white;}'))
                                                           ),
@@ -216,10 +216,11 @@ ui <-shinyUI(
                                          
                             ) # end of sidebarPanel for Filtering
                             ,column(width =6,br(), br(),h4(htmlOutput("text1")))
-                            ,column(width =6,br(), br(),h6(htmlOutput("thtext")))
+                            
                             #,column(width =12,br(), br(),plotOutput("fdata_umi_gene"))
                             ,column(width =6,br(), br(),DT::dataTableOutput("fgene"))
                             ,column(width =8,br(), br(),plotOutput("mdataplot"))
+                            ,column(width =6,br(), br(),h6(htmlOutput("thtext")))
                             ,column(width =10,br(), br(),
                                     splitLayout(
                                       style = "border: 1px solid silver;",
@@ -255,29 +256,29 @@ ui <-shinyUI(
                                          ),
                                          actionButton('nor_ok', 'Submit'),
                                          tags$hr(),  
-                                         h5("Find Highly Variable Features"),
-                                         numericInput("top_vgenes", "Number of Features", 2000, min = 1, max = Inf),
+                                         h5("Find Highly Variable Genes"),
+                                         numericInput("top_vgenes", "Number of Genes", 2000, min = 1, max = Inf),
                                          tags$head(
                                            tags$style(HTML('#hvg_ok{background-color:#8B0000;color:white;}'))
                                          ),
                                          actionButton('hvg_ok', 'Find'),
                                          tags$hr(), 
-                                         checkboxInput('hvg_disp',p('Show Highly Variable Features')),
+                                         checkboxInput('hvg_disp',p('Show Highly Variable Genes')),
                                          tags$hr(),
-                                         checkboxInput('hfp_disp',p('Variable Features Plot')),
+                                         checkboxInput('hfp_disp',p('Variable Genes Plot')),
                                          conditionalPanel('input.hfp_disp==1',"",
-                                                          numericInput("top_hfp", "Top Features:", 10, min = 1, max = Inf)
+                                                          numericInput("top_hfp", "Top Genes:", 10, min = 1, max = Inf)
                                          ),
                                          tags$hr(),
                                          
-                                         checkboxInput('high_hvg',p('Download Highly Variable Features(as a .csv file)')),
+                                         checkboxInput('high_hvg',p('Download Highly Variable Genes expression value (normalized)(as a .csv file)')),
                                          conditionalPanel('input.high_hvg==1',
                                                           downloadButton("hvg_download", "Download"))
                             ), # # end of sidebarPanel for Normalization
                             column(width =6,br(), br(),h6(htmlOutput("nor_text"))),
                             column(width =6,br(), br(), verbatimTextOutput("hvg_list")),
                             column(width = 6, br(), br(),DT::dataTableOutput("hvg_table")),
-                            column(width =9,br(), br(),plotOutput("hfp_plot"))
+                            column(width =10,br(), br(),plotOutput("hfp_plot"))
                    ),# end of tabPanel for Normalization
                    
                    
@@ -286,7 +287,7 @@ ui <-shinyUI(
                             sidebarPanel(id = "dim_slid", width = 4, 
                                          tags$style("#dim_slid{background-color:#A9F19C;}"),
                                          radioButtons("pc_genes", "Gene use",
-                                                      choices = c('High Variable Features Only' = "pc_hvg",'All Genes' = "pc_all"),selected = "pc_hvg"),
+                                                      choices = c('High Variable Genes Only' = "pc_hvg",'All Genes' = "pc_all"),selected = "pc_hvg"),
                                          column(width = 12, numericInput("pc_cells", "Number of PCs:", 20, min = 1, max = Inf)),
                                          
                                          #checkboxInput('pc_impute',h3('Apply imputation')),
@@ -310,12 +311,12 @@ ui <-shinyUI(
                                          #tags$hr(),
                                          checkboxInput('pc_hmap',p('PC Heatmap')),
                                          conditionalPanel('input.pc_hmap==1', 
-                                                          "Please set the PCs to plot the Heatmap:",
+                                                          "Please set the PC(s) to plot the Heatmap:",
                                                           br(),
-                                                          column(width=4,numericInput("pc_low", "Lower limit",1,min = 1, max = Inf)),
-                                                          column(width=4,numericInput("pc_upper", "Upper limit",1,min = 1, max = Inf)),
+                                                          column(width=12,numericInput("pc_low", "Lower limit (PC)",1,min = 1, max = Inf)),
+                                                          column(width=12,numericInput("pc_upper", "Upper limit (PC)",1,min = 1, max = Inf)),
                                                           br(),br(),br(),br(),br(),
-                                                          column(width = 8, numericInput("pc_hmap_genes", "Number of genes", 30, min = 2, max = Inf)),
+                                                          column(width = 12, numericInput("pc_hmap_genes", "Number of genes(n): n*2 genes show in heatmap", 15, min = 1, max = Inf)),
                                                           br(), br(),
                                                           tags$head(
                                                             tags$style(HTML('#pc_hmap_ok{background-color:black;color:white;}'))
@@ -345,7 +346,7 @@ ui <-shinyUI(
                                          "Please select the PCs for clustering:",
                                          br(),
                                          column(width=12,numericInput("clus_low", "Lower limit",1,min = 1, max = Inf)),
-                                         column(width=12,numericInput("clus_upper", "Upper limit",2,min = 1, max = Inf)),
+                                         column(width=12,numericInput("clus_upper", "Upper limit",20,min = 1, max = Inf)),
                                          column(width =12, numericInput("clus_restn","Resolution",0.8,min=0,max = Inf)),
                                          #column(width =8, numericInput("clus_itr","Iterations",10,min=1,max = Inf)),
                                          selectInput('clus_algo','Select Algorithm',choices = c("Louvain Algorithm(LA)", 
@@ -449,9 +450,9 @@ ui <-shinyUI(
                                           #),   # end of the Dynamic heatmap 
                                           
                                           
-                                          # --------------------------------------------------- Static Heatmap --------------------------------------------------
+                                          # --------------------------------------------------- Heatmap --------------------------------------------------
                                           
-                                          tabPanel("Static Heatamp", 
+                                          tabPanel("Heatmap", 
                                                    img(src = "line_font1.png"),
                                                    sidebarPanel(id  = "stmp_slid" ,width = 5,
                                                                 tags$style("#stmp_slid{background-color:#EAC9F3;}"),
@@ -568,7 +569,7 @@ ui <-shinyUI(
                                                                   'Negative pathways' = "path_neg"),
                                                       selected = "path_pos"),
                                          
-                                         numericInput("path_qval","Cutoff q-value(<= cutoff):", 0.1, min = 0,max = Inf),                 
+                                         numericInput("path_qval","Cutoff: padj(<= cutoff)", 0.1, min = 0,max = Inf),                 
                                          
                                          uiOutput("path_ftr_download_UI"),
                                          
@@ -579,7 +580,7 @@ ui <-shinyUI(
                                          
                                          checkboxInput('path_list_show',h4('Show Pathways list')),
                                          
-                                         checkboxInput("path_genesets",p('Show Gene sets:')),
+                                         checkboxInput("path_genesets",p('Show Gene sets')),
                                          conditionalPanel('input.path_genesets==1',
                                                           numericInput("path_no","Pathway No.:", 1, min = 1,max = Inf),
                                                           radioButtons("path_hmap_genes", p("Select Gene Set"),
@@ -614,7 +615,7 @@ ui <-shinyUI(
                                          #h4("Choose Your Input Option!"),
                                          h2("Select Analysis Options"),
                                          radioButtons("tray_genes", "Gene use",
-                                                      choices = c('High Variable Features Only' = "tray_hvg",'All Genes' = "tray_all"),
+                                                      choices = c('High Variable Genes Only' = "tray_hvg",'All Genes' = "tray_all"),
                                                       selected = "tray_hvg"),
                                          
                                          checkboxInput("tray_plot_set",p('Cell trajectory plot')),
@@ -628,7 +629,7 @@ ui <-shinyUI(
                                                           
                                          ),
                                          
-                                         checkboxInput("tray_pseu_set",p('Pseudotemporal plot')),
+                                         checkboxInput("tray_pseu_set",p('Pseudotemporal heatmap')),
                                          
                                          
                                          conditionalPanel('input.tray_pseu_set==1',
