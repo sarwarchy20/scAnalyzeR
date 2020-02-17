@@ -11,7 +11,7 @@ source("ui.R")
 # ************************************************ Global section ***************************************************
 
 #library(survival)
-#library("leiden")
+#library("leiden") 
 #library("igraph")
 #new2_data<-read.csv(unz("pbmc4k.zip", "pbmc4k.csv")) 
 #new2_data<-read.csv("summing_data_1.csv") 
@@ -131,8 +131,8 @@ server <- function(input, output,session) {
   output$text <- renderUI({
     if(!is.null(new2_data())){
       str1<-paste("Summary of The Uploaded Dataset:")
-      str2 <- paste("Total number of features(genes): ", nrow(new2_data()))
-      str3 <- paste("Total number of samples(cells): ", ncol(new2_data()))
+      str2 <- paste("Total number of genes(features): ", nrow(new2_data()))
+      str3 <- paste("Total number of cells(samples): ", ncol(new2_data()))
       HTML(paste(str1, str2 ,str3, sep = '<br/>'))
     }
     
@@ -207,8 +207,8 @@ server <- function(input, output,session) {
     
     if(!is.null(pbmc())){ 
       str1<-paste("Dataset Created with:")
-      str2 <- paste("Total number of features(genes): ", nrow(GetAssayData(object = pbmc())))
-      str3 <- paste("Total number of samples(cells): ", f_total_col=ncol(GetAssayData(object = pbmc())))
+      str2 <- paste("Total number of genes(features): ", nrow(GetAssayData(object = pbmc())))
+      str3 <- paste("Total number of cells(samples): ", f_total_col=ncol(GetAssayData(object = pbmc())))
       HTML(paste(str1, str2 ,str3, sep = '<br/>'))
     }
   })
@@ -304,8 +304,8 @@ server <- function(input, output,session) {
     if(is.null(pbmcf())) return()
     else if(input$th == FALSE) return()
     str1<-paste("Filtered Dataset:")
-    str2 <- paste("Total number of features(genes): ", nrow(GetAssayData(object = pbmcf())))
-    str3 <- paste("Total number of samples(cells): ", ncol(GetAssayData(object = pbmcf())))
+    str2 <- paste("Total number of genes(features): ", nrow(GetAssayData(object = pbmcf())))
+    str3 <- paste("Total number of cells(samples): ", ncol(GetAssayData(object = pbmcf())))
     
     HTML(paste(str1, str2 ,str3, sep = '<br/>'))
     
@@ -352,8 +352,8 @@ server <- function(input, output,session) {
     if(is.null(nor_pbmc())) return()
     else if(input$nor_ok == FALSE) return()
     str1<-paste("Normalized Dataset:")
-    str2 <- paste("Total number of features(genes): ", nrow(GetAssayData(object = nor_pbmc())))
-    str3 <- paste("Total number of samples(cells): ", ncol(GetAssayData(object = nor_pbmc())))
+    str2 <- paste("Total number of genes(features): ", nrow(GetAssayData(object = nor_pbmc())))
+    str3 <- paste("Total number of cells(samples): ", ncol(GetAssayData(object = nor_pbmc())))
     HTML(paste(str1, str2 ,str3, sep = '<br/>'))
   })
   #.................... Highly Variable Genes.....................................................................................
@@ -375,7 +375,7 @@ server <- function(input, output,session) {
     else if(input$hvg_ok == FALSE) return()
     #temp<-hv_pbmc()@var.genes
     ##temp
-    print(paste("Highly Variable Features Detected: ",length(x= VariableFeatures(object = hv_pbmc()))))
+    print(paste("Highly Variable Genes Detected: ",length(x= VariableFeatures(object = hv_pbmc()))))
     
   })
   
@@ -545,7 +545,7 @@ server <- function(input, output,session) {
     if(input$pc_hmap_ok == FALSE) return()
     #isolate({
       #DimHeatmap(object = pbmc, dims = 1:15, cells = 500, balanced = TRUE)
-      DimHeatmap(object = pc_pbmc(), dims = input$pc_low:input$pc_upper, nfeatures = input$pc_hmap_genes,
+      DimHeatmap(object = pc_pbmc(), dims = input$pc_low:input$pc_upper, nfeatures = input$pc_hmap_genes*2,
                  balanced = TRUE, fast = TRUE)
     #})
   })
@@ -609,7 +609,7 @@ server <- function(input, output,session) {
       # labs(x = "tSNE_1",
       #      y = "tSNE_2")
       
-      DimPlot(object = clus_pbmc(), reduction = "tsne") + 
+      DimPlot(object = clus_pbmc(), reduction = "tsne", label = T, label.size = 7, pt.size = 1) + 
         scale_colour_discrete(breaks = ClusterBreaks, 
                               labels = ClusterLabels) +
         labs(x = "tSNE_1",
@@ -647,7 +647,7 @@ server <- function(input, output,session) {
       scale_fill_hue(c = 100) +
       labs(x = "Clusters", 
            y = "Number of Cells") +
-      ggtitle("Number of cells in the each cluster") +
+      ggtitle("Number of cells in each cluster") +
       geom_text(aes(label=bar_data$Freq), position=position_dodge(width=1), vjust=-0.25, col= "black")
     
     barp1<-clus_bar_plot+ theme(plot.title = element_text(hjust = 0.5), 
@@ -671,7 +671,10 @@ server <- function(input, output,session) {
     tabsetPanel(id = "de_tabset",
                  
                  tabPanel("Find all markers",
+                         
                           img(src = "line_font1.png"),
+                          p('Find markers (differentially expressed genes) for all clusters, 
+                            click the “Find All markers” button.'),
                           sidebarPanel(id = "allclus_slid", width = 6, height = 1000, 
                                        tags$style("#allclus_slid{background-color:#F6F9CD;}"),
                                        br(),
@@ -704,8 +707,8 @@ server <- function(input, output,session) {
                                        checkboxInput('de_filter',p('Filtering Markers')),
                                        conditionalPanel('input.de_filter == 1',
                                                         column(width = 6, numericInput("all_clst_thres","Avg.logFC threshold",0.25,min = 0,max = Inf)),
-                                                        column(width = 6, numericInput("all_clst_pct","Min % (min.pct)",0.1,min = 0,max = Inf)),
-                                                        column(width = 12, numericInput("all_clst_pvalue","Adjust p-value",0.05,min = 0,max = Inf)),
+                                                        column(width = 6, numericInput("all_clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
+                                                        column(width = 12, numericInput("all_clst_pvalue","Adjusted p-value(p_val_adj<=input value",0.05,min = 0,max = Inf)),
                                                         #actionButton('de_ok_filter','Search Markers'),
                                                         #tags$hr(),
                                                         radioButtons("de_selection", "Markers Selection",
@@ -714,7 +717,7 @@ server <- function(input, output,session) {
                                                         
                                                         checkboxInput('all_de_show_top',p('Show Top genes')),
                                                         conditionalPanel('input.all_de_show_top == 1',
-                                                                         column(width = 6, numericInput("all_de_top_gene", "Top DE genes:", 5, min = 1, max = Inf)),
+                                                                         numericInput("all_de_top_gene", "Top DE genes(according to avg_logFC):", 5, min = 1, max = Inf),
                                                                          tags$head(
                                                                            tags$style(HTML('#top_genes_download{background-color:#800080;color:white;}'))
                                                                          ),
@@ -757,6 +760,8 @@ server <- function(input, output,session) {
                  
                  tabPanel("Find markers by cluster",
                           img(src = "line_font1.png"),
+                          p('A list of markers will be identified in a particular cluster (cluster 0 is selected by default) 
+                          ,compared to all remained clusters.'),
                           sidebarPanel(id = "fclus_slid",width = 6,
                                        tags$style("#fclus_slid{background-color:#FAE4E0;}"),
                                        "Please select parameters:",
@@ -769,7 +774,7 @@ server <- function(input, output,session) {
                                        column( width = 5,selectInput('sclst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
                                        #column( width = 5,numericInput("sclst1", "Select cluster:", 0, min = 0, max = Inf)),
                                        column(width = 6, numericInput("sclst_thres","logfc threshold",0.25,min = 0,max = Inf)),
-                                       column(width = 12, numericInput("sclst_pct","Min % (min.pct)",0.1,min = 0,max = Inf)),
+                                       column(width = 12, numericInput("sclst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
                                        
                                        column(width = 12,selectizeInput("sde_test", "Select Test Method", 
                                                                         c(Wilcox = "wilcox",
@@ -794,14 +799,14 @@ server <- function(input, output,session) {
                                        
                                        checkboxInput('sde_filter',p('Filtering Markes')),
                                        conditionalPanel('input.sde_filter == 1',
-                                                        column(width = 12, numericInput("sde_clst_pvalue","Adjust p-value",0.05,min = 0,max = Inf)),
+                                                        column(width = 12, numericInput("sde_clst_pvalue","Adjusted p-value(p_val_adj<=input value)",0.05,min = 0,max = Inf)),
                                                         tags$hr(),
                                                         radioButtons("sde_selection", "Markers Selection",
                                                                      choices = c('Positive only' = "sde_pos",'Negative only' = "sde_neg"),selected = "sde_pos"),
                                                         
                                                         checkboxInput('sde_filter_hmap',p('Show Heatmap')),
                                                         conditionalPanel('input.sde_filter_hmap == 1',
-                                                                         column(width = 6, numericInput("sde_top","Top Genes:", 10, min = 2,max = Inf)),
+                                                                         numericInput("sde_top","Top Genes (accoring to avg_logFC):", 10, min = 2,max = Inf),
                                                                          checkboxInput('sde_filter_hmap_cluster',p('Zoom the cluster'))
                                                         ),
                                                         
@@ -822,6 +827,10 @@ server <- function(input, output,session) {
                  # ---------------------------------------------------------   
                  tabPanel("Find markers by clusters vs other clusters",
                           img(src = "line_font1.png"),
+                          p('Find markers by cluster(s) versus cluster(s).
+                            The cluster number must be separated by a comma, and 
+                            no common cluster number is allowed as an input for both textboxes. 
+                            If the same cluster number is written in both input boxes, it will be shown an error message, “Error: No features pass logfc.threshold threshold”.'),
                           sidebarPanel(id = "fclus_slid2",width = 6, 
                                        tags$style("#fclus_slid2{background-color:#DAF3DA;}"),
                                        "Please select parameters:",
@@ -833,7 +842,8 @@ server <- function(input, output,session) {
                                        
                                        #column( width = 5,selectInput('clst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
                                        
-                                       column(width = 12, textAreaInput("clst1","Select Cluster/s", placeholder =  "The cluster number must be separated by a commma")),
+                                       column(width = 12, textAreaInput("clst1","Select Cluster/s", 
+                                                                        placeholder =  "The cluster number must be separated by a commma, for example: 2,4,5,")),
                                        
                                        tags$head(
                                          tags$style(HTML('#clst2{background-color:#800080;color:white;}'))
@@ -843,10 +853,11 @@ server <- function(input, output,session) {
                                        br(),
                                        tags$hr(),
                                        br(),
-                                       column(width = 12, textAreaInput("clst2","Select complementary cluster/s", placeholder = "The cluster number must be separated by a commma")),
+                                       column(width = 12, textAreaInput("clst2","Select complementary cluster/s", 
+                                                                        placeholder = "The cluster number must be separated by a commma, for example: 0,1,3")),
                                        
                                        column(width = 6, numericInput("clst_thres","logfc threshold",0.25,min = 0,max = Inf)),
-                                       column(width = 6, numericInput("clst_pct","Min % (min.pct)",0.1,min = 0,max = Inf)),
+                                       column(width = 6, numericInput("clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
                                        
                                        column(width = 12,selectizeInput("de_test", "Select Test Method", 
                                                                         c(Wilcox = "wilcox",
@@ -880,7 +891,7 @@ server <- function(input, output,session) {
                                                         
                                                         checkboxInput('fde_filter_hmap',p('Show Heatmap')),
                                                         conditionalPanel('input.fde_filter_hmap == 1',
-                                                                         column(width = 6, numericInput("fde_top","Top Genes:", 10, min = 2,max = Inf))              
+                                                                         numericInput("fde_top","Top Genes:", 10, min = 2,max = Inf)              
                                                         ),
                                                         
                                                         checkboxInput('fde_filter_show',p('Show Filtered Markers'))
@@ -901,16 +912,16 @@ server <- function(input, output,session) {
   
   # .................................................................... find all markers  ............................
   all_markers<-reactive({
-    if(is.null(clus_pbmc())) return()
-    else if (input$all_de_ok == FALSE) return()
+    #if(is.null(clus_pbmc())) return()
+    if(input$all_de_ok == FALSE) return()
     isolate({
       
       FindAllMarkers(clus_pbmc(), assay = NULL, features = NULL,
                      logfc.threshold = 0, test.use = input$all_de_test, slot = "data",
                      min.pct = 0, min.diff.pct = -Inf, node = NULL, verbose = TRUE,
                      only.pos = FALSE, max.cells.per.ident = Inf, random.seed = 1,
-                     latent.vars = NULL, min.cells.feature = 3, min.cells.group = 3,
-                     pseudocount.use = 1, return.thresh = 0.01)
+                     latent.vars = NULL, min.cells.feature = 1, min.cells.group = 1,
+                     pseudocount.use = 1, return.thresh = Inf)
       
     })
   })
@@ -961,13 +972,13 @@ server <- function(input, output,session) {
   fmarkers<-reactive({
     if(is.null(all_markers())) return()
     else if(input$de_selection == "de_pos")
-      filter(all_markers(),avg_logFC>=input$all_clst_thres, pct.1>=input$all_clst_pct , p_val_adj<= input$all_clst_pvalue)
+      dplyr::filter(all_markers(),avg_logFC>=input$all_clst_thres, pct.1>=input$all_clst_pct , p_val_adj<= input$all_clst_pvalue)
     
     else if(input$de_selection == "de_neg")
-      filter(all_markers(),avg_logFC<=(input$all_clst_thres)*(-1), pct.1>=input$all_clst_pct, p_val_adj<= input$all_clst_pvalue)
+      dplyr::filter(all_markers(),avg_logFC<=(input$all_clst_thres)*(-1), pct.1>=input$all_clst_pct, p_val_adj<= input$all_clst_pvalue)
     
     #else {
-    #filter(all_markers(),abs(avg_logFC)>=input$all_clst_thres, pct.1>=input$all_clst_pct, p_val_adj<= input$all_clst_pvalue) 
+    #dplyr::filter(all_markers(),abs(avg_logFC)>=input$all_clst_thres, pct.1>=input$all_clst_pct, p_val_adj<= input$all_clst_pvalue) 
     #}
   })
   
@@ -1129,11 +1140,11 @@ server <- function(input, output,session) {
     
     #How many DE genes in  the each cluster
     else if (input$de_ck_barplot == "de_all_bar"){
-      degenes<- data.frame(filter(dplyr::select(all_markers() ,gene, cluster)))
+      degenes<- data.frame(dplyr::filter(dplyr::select(all_markers() ,gene, cluster)))
     }
     
     else if (input$de_ck_barplot == "de_filt_bar"){
-      degenes<- data.frame(filter(dplyr::select(fmarkers() ,gene, cluster)))
+      degenes<- data.frame(dplyr::filter(dplyr::select(fmarkers() ,gene, cluster)))
     }
     
     else if (input$de_ck_barplot == "hide_de_bar") { return ()}
@@ -1233,7 +1244,10 @@ server <- function(input, output,session) {
     else if (input$sde_show == FALSE) return()
     
     #dplyr::select(scluster_markers(),Gene, p_val,avg_logFC,pct.1,pct.2,p_val_adj)
-    scluster_markers()
+    #scluster_markers()
+    tgs<-dplyr::select(scluster_markers(), -Gene)
+    all_de_data<-data.frame(tgs)
+    all_de_data
   })
   
   
@@ -1243,12 +1257,12 @@ server <- function(input, output,session) {
     if(is.null(scluster_markers())) return()
     
     else if(input$sde_selection == "sde_pos"){
-      sfd<- filter(scluster_markers(),avg_logFC>=0, p_val_adj<= input$sde_clst_pvalue)
+      sfd<- dplyr:: filter(scluster_markers(),avg_logFC>=0, p_val_adj<= input$sde_clst_pvalue)
       sfd <- sfd[order(-sfd$avg_logFC),]
     }
     
     else if(input$sde_selection == "sde_neg"){
-      sfd<- filter(scluster_markers(),avg_logFC<0, p_val_adj<= input$sde_clst_pvalue)
+      sfd<- dplyr:: filter(scluster_markers(),avg_logFC<0, p_val_adj<= input$sde_clst_pvalue)
       sfd<- sfd[order(sfd$avg_logFC),]
     }
     
@@ -1342,12 +1356,12 @@ server <- function(input, output,session) {
     if(is.null(cluster_markers())) return()
     else if(input$fde_selection == "fde_pos")
     {
-      sfd<- filter(cluster_markers(),avg_logFC>=0, p_val_adj<= input$fde_clst_pvalue)
+      sfd<- dplyr::filter(cluster_markers(),avg_logFC>=0, p_val_adj<= input$fde_clst_pvalue)
       sfd <- sfd[order(-sfd$avg_logFC),]
     }
     
     else if(input$fde_selection == "fde_neg"){
-      sfd<- filter(cluster_markers(),avg_logFC<0, p_val_adj<= input$fde_clst_pvalue)
+      sfd<- dplyr::filter(cluster_markers(),avg_logFC<0, p_val_adj<= input$fde_clst_pvalue)
       sfd<- sfd[order(sfd$avg_logFC),]
     }
     
@@ -1448,7 +1462,7 @@ server <- function(input, output,session) {
     
     #print(gene_list)
     
-    FeaturePlot(clus_pbmc(), features = gene_list, ncol = 2, label  = T) 
+    FeaturePlot(clus_pbmc(), features = gene_list, ncol = 2, label  = F) 
     
   })
   # ----------------------------------------------------------------- Pathways Analysis --------------------- 
@@ -2026,7 +2040,7 @@ server <- function(input, output,session) {
       m_sub  <- GetAssayData(object = scdata(), slot = "scale.data")[rev_gene_list,] # used scaled data
       
       hplot3<-heatmap3(m_sub,Rowv = NA, Colv = m_sub, showRowDendro = F, showColDendro = F, labCol  = NA,
-                       lasRow = 1, margins = c(5,5) )
+                       lasRow = 2, margins = c(5,5) )
       hplot3
     }
     
