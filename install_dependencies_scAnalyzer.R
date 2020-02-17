@@ -44,3 +44,5 @@ if (!requireNamespace("gage", quietly = TRUE))
 if (!requireNamespace("monocle", quietly = TRUE))
   BiocManager::install("monocle")
 
+if (!requireNamespace("MAST", quietly = TRUE))
+  BiocManager::install("MAST")
