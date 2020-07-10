@@ -35,8 +35,8 @@ if (!requireNamespace("org.Mm.eg.db", quietly = TRUE))
 if (!requireNamespace("GO.db", quietly = TRUE))
 BiocManager::install("GO.db")
 
-if (!requireNamespace("pathview", quietly = TRUE))
-  BiocManager::install("pathview")
+#if (!requireNamespace("pathview", quietly = TRUE))
+ # BiocManager::install("pathview")
 
 if (!requireNamespace("gage", quietly = TRUE))
   BiocManager::install("gage")
