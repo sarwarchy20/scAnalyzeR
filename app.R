@@ -177,8 +177,10 @@ server <- function(input, output,session) {
     #
     # for (i in 1:n) {
     isolate({
-      total_col<-ncol(new2_data())
-      pbmct<- CreateSeuratObject(counts = new2_data(), 
+      in_data<- new2_data()
+      total_col<-ncol(in_data)
+      names(in_data)<- gsub("_",".", names(in_data))
+      pbmct<- CreateSeuratObject(counts = in_data, 
                                  min.cells = input$cells, min.feature = input$genes, 
                                  project = "Cells")
       # Increment the progress bar, and update the detail text.
@@ -223,7 +225,7 @@ server <- function(input, output,session) {
       {
         mito.genes<- grep(pattern = "^mt-", x = rownames(GetAssayData(object = pbmc())), value = TRUE)
       }
-      
+      if(length(x=mito.genes)>0){
       mt_data<- data.matrix(GetAssayData(object = pbmc()[mito.genes,]))
       
       mtd2<- data.frame(rowSums(mt_data))
@@ -233,6 +235,12 @@ server <- function(input, output,session) {
           Total_Count = rowSums.mt_data.
         )
       mtd2
+      }
+      
+      else 
+      {
+        data.matrix(matrix("No MT genes!!", nrow = 1, ncol = 1))
+      }
       
     }
     else 
@@ -425,9 +433,9 @@ server <- function(input, output,session) {
     if(is.null(hv_pbmc())) return()
     else if(input$hvg_ok == FALSE) return()
     #isolate({
-      #print(hv_pbmc())
-      all_genes <- rownames(x = hv_pbmc())
-      ScaleData(object = hv_pbmc(), features = all_genes)
+    #print(hv_pbmc())
+    all_genes <- rownames(x = hv_pbmc())
+    ScaleData(object = hv_pbmc(), features = all_genes)
     #})
     
   })
@@ -486,7 +494,7 @@ server <- function(input, output,session) {
     if(is.null(pc_pbmc())) return() 
     else if(input$ck_tsne_plot==FALSE) return() #hide("sc_pca_plot")
     t_tsne<- RunTSNE(object = pc_pbmc(), reduction = "pca", 
-                     dims.use = 1:input$pc_cells, do.fast = TRUE)
+                     dims.use = 1:input$pcs_no, do.fast = TRUE)
     DimPlot(object = t_tsne, reduction = "tsne")
     
   })
@@ -544,9 +552,9 @@ server <- function(input, output,session) {
   output$pc_hplot<-renderPlot({
     if(input$pc_hmap_ok == FALSE) return()
     #isolate({
-      #DimHeatmap(object = pbmc, dims = 1:15, cells = 500, balanced = TRUE)
-      DimHeatmap(object = pc_pbmc(), dims = input$pc_low:input$pc_upper, nfeatures = input$pc_hmap_genes*2,
-                 balanced = TRUE, fast = TRUE)
+    #DimHeatmap(object = pbmc, dims = 1:15, cells = 500, balanced = TRUE)
+    DimHeatmap(object = pc_pbmc(), dims = input$pc_low:input$pc_upper, nfeatures = input$pc_hmap_genes*2,
+               balanced = TRUE, fast = TRUE)
     #})
   })
   
@@ -617,6 +625,36 @@ server <- function(input, output,session) {
     })
   })
   
+  # ...... Assigning Cell Type
+  
+  output$cell_type_input_UI<-renderUI({
+    
+    
+                     textAreaInput("cell_type_name","Write Cell Type",
+                                   placeholder = "Double qoute and separated by comma",
+                                   width = "200px", height = "250px")
+    
+  }) 
+  
+  cell_ids<- reactive({
+    
+    if (input$cell_type == FALSE) return()
+    cell_list<- unlist(strsplit(input$cell_type_name, ','))
+    print(cell_list)
+    cell.ids<- c(cell_list)
+    names(cell.ids) <- levels(clus_pbmc())
+    pbmc1 <- RenameIdents(clus_pbmc(), cell.ids)
+    
+  })
+  
+  output$clus_cell_type_plot<-renderPlot({
+    if(is.null(clus_pbmc())) return()
+    else if (input$cell_type == FALSE) return()
+      
+      DimPlot(cell_ids(), reduction = "tsne", label = TRUE, label.size = 6.5, pt.size = 1) + NoLegend()
+    
+  })
+  
   # UMAP plot
   
   output$clus_umap_plot<-renderPlot({
@@ -669,244 +707,259 @@ server <- function(input, output,session) {
   output$DE_clus_UI <- renderUI({
     
     tabsetPanel(id = "de_tabset",
-                 
-                 tabPanel("Find all markers",
+                
+                tabPanel("Find all markers",
                          
-                          img(src = "line_font1.png"),
-                          p('Find markers (differentially expressed genes) for all clusters, 
-                            click the “Find All markers” button.'),
-                          sidebarPanel(id = "allclus_slid", width = 6, height = 1000, 
-                                       tags$style("#allclus_slid{background-color:#F6F9CD;}"),
-                                       br(),
-                                       
-                                       
-                                       
-                                       column(width = 12,selectizeInput("all_de_test", "Select Test Method", 
-                                                                        c(Wilcox = "wilcox",
-                                                                          Bimod='bimod',
-                                                                          t_test='t',
-                                                                          Logistic_Regression= 'LR',
-                                                                          MAST = 'MAST'),
-                                                                        selected = 'wilcox')),        
-                                       
-                                       tags$head(
-                                         tags$style(HTML('#all_de_ok{background-color:red;color:white;}'))
-                                       ),
-                                       actionButton('all_de_ok', 'Find All markers'),
-                                       
-                                       #tags$hr(),
-                                       uiOutput("DE_download_UI"),
-                                       
-                                       #tags$hr(),
-                                       checkboxInput('all_de_show',p('Show All Markers')),
-                                       
-                                       #tags$hr(),
-                                       
-                                       
-                                       #.....................
-                                       checkboxInput('de_filter',p('Filtering Markers')),
-                                       conditionalPanel('input.de_filter == 1',
-                                                        column(width = 6, numericInput("all_clst_thres","Avg.logFC threshold",0.25,min = 0,max = Inf)),
-                                                        column(width = 6, numericInput("all_clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
-                                                        column(width = 12, numericInput("all_clst_pvalue","Adjusted p-value(p_val_adj<=input value",0.05,min = 0,max = Inf)),
-                                                        #actionButton('de_ok_filter','Search Markers'),
-                                                        #tags$hr(),
-                                                        radioButtons("de_selection", "Markers Selection",
-                                                                     choices = c('Positive only' = "de_pos",'Negative only' = "de_neg"),selected = "de_pos"),
-                                                        checkboxInput('de_filter_show',p('Show filtered list')),
-                                                        
-                                                        checkboxInput('all_de_show_top',p('Show Top genes')),
-                                                        conditionalPanel('input.all_de_show_top == 1',
-                                                                         numericInput("all_de_top_gene", "Top DE genes(according to avg_logFC):", 5, min = 1, max = Inf),
-                                                                         tags$head(
-                                                                           tags$style(HTML('#top_genes_download{background-color:#800080;color:white;}'))
-                                                                         ),
-                                                                         downloadButton("top_genes_download", "Save All Top genes as a text file"),
-                                                                         #tags$hr(),
-                                                                         downloadButton("top_pos_genes_download", "Save +ve Top genes as a text file"),
-                                                                         downloadButton("top_neg_genes_download", "Save -ve Top genes as a text file"),
-                                                                         #tags$hr(),
-                                                                         checkboxInput('de_filter_hmap',p('Show Heatmap(top genes)'))
-                                                        )
-                                                        
-                                                        
-                                                        
-                                       ), 
-                                       
-                                       # tags$hr(),
-                                       
-                                       radioButtons("de_ck_barplot", "Markers Barplot",
-                                                    choices = c('All DE genes' = "de_all_bar",'Filtered DE genes' = "de_filt_bar", 
-                                                                'Hide Bar Plot' = 'hide_de_bar'),
-                                                    selected = "de_all_bar")
-                                       
-                                       
-                                       
-                                       #,
-                                       
-                                       
-                                       #conditionalPanel('input.all_de_show == 1',
-                                       #downloadButton("all_de_download", "Download"))
-                          ),
-                          column(width =6,br(), br(),h6(htmlOutput("de_text"))),
-                          #column( width = 6 , downloadButton("all_de_download", "Download")),
-                          column(width = 6, br(), br(),DT::dataTableOutput("all_de_list")), 
-                          column(width = 6, br(), br(),DT::dataTableOutput("filt_de_list")),
-                          column(width =12, br(), br(), plotOutput("all_de_barplot")),
-                          column(width = 6, br(), br(),DT::dataTableOutput("all_de_show_top_list")),
-                          column(width =12, br(), br(), plotOutput("de_filter_hmap_plot"))
-                 ), # tabPanel of Find all markers 
-                 
-                 
-                 tabPanel("Find markers by cluster",
-                          img(src = "line_font1.png"),
-                          p('A list of markers will be identified in a particular cluster (cluster 0 is selected by default) 
-                          ,compared to all remained clusters.'),
-                          sidebarPanel(id = "fclus_slid",width = 6,
-                                       tags$style("#fclus_slid{background-color:#FAE4E0;}"),
-                                       "Please select parameters:",
-                                       #tags$hr(),
-                                       br(),
-                                       tags$head(
-                                         tags$style(HTML('#sclst1{background-color:#0000FF;color:white;font-size: 15px;}'))
-                                       ),
-                                       
-                                       column( width = 5,selectInput('sclst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
-                                       #column( width = 5,numericInput("sclst1", "Select cluster:", 0, min = 0, max = Inf)),
-                                       column(width = 6, numericInput("sclst_thres","logfc threshold",0.25,min = 0,max = Inf)),
-                                       column(width = 12, numericInput("sclst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
-                                       
-                                       column(width = 12,selectizeInput("sde_test", "Select Test Method", 
-                                                                        c(Wilcox = "wilcox",
-                                                                          Bimod='bimod',
-                                                                          t_test='t',
-                                                                          Logistic_Regression= 'LR',
-                                                                          MAST = 'MAST'),
-                                                                        selected = 'wilcox')),
-                                       tags$head(
-                                         tags$style(HTML('#sde_ok{background-color:black;color:white;}'))
-                                       ),
-                                       actionButton('sde_ok', 'Find Markers'),
-                                       tags$hr(),
-                                       
-                                       
-                                       uiOutput("sDE_download_UI"),
-                                       
-                                       
-                                       tags$hr(),
-                                       checkboxInput('sde_show',p('Show All Markers(both positive and negative)')),
-                                       
-                                       
-                                       checkboxInput('sde_filter',p('Filtering Markes')),
-                                       conditionalPanel('input.sde_filter == 1',
-                                                        column(width = 12, numericInput("sde_clst_pvalue","Adjusted p-value(p_val_adj<=input value)",0.05,min = 0,max = Inf)),
-                                                        tags$hr(),
-                                                        radioButtons("sde_selection", "Markers Selection",
-                                                                     choices = c('Positive only' = "sde_pos",'Negative only' = "sde_neg"),selected = "sde_pos"),
-                                                        
-                                                        checkboxInput('sde_filter_hmap',p('Show Heatmap')),
-                                                        conditionalPanel('input.sde_filter_hmap == 1',
-                                                                         numericInput("sde_top","Top Genes (accoring to avg_logFC):", 10, min = 2,max = Inf),
-                                                                         checkboxInput('sde_filter_hmap_cluster',p('Zoom the cluster'))
-                                                        ),
-                                                        
-                                                        checkboxInput('sde_filter_show',p('Show Filtered Markers'))
-                                                        
-                                       )
-                                       
-                          ),
-                          
-                          column(width = 6, br(), br(),DT::dataTableOutput("sde_list")),
-                          column(width = 6, br(), br(),DT::dataTableOutput("sde_filtered_list")),
-                          column(width =12, br(), br(), plotOutput("sde_filter_hmap_plot")),
-                          column(width =12, br(), br(), plotOutput("sde_filter_hmap_cluster_plot"))
-                          
-                          
-                 ), # End tabPanel for markers by cluster
-                 
-                 # ---------------------------------------------------------   
-                 tabPanel("Find markers by clusters vs other clusters",
-                          img(src = "line_font1.png"),
-                          p('Find markers by cluster(s) versus cluster(s).
-                            The cluster number must be separated by a comma, and 
-                            no common cluster number is allowed as an input for both textboxes. 
-                            If the same cluster number is written in both input boxes, it will be shown an error message, “Error: No features pass logfc.threshold threshold”.'),
-                          sidebarPanel(id = "fclus_slid2",width = 6, 
-                                       tags$style("#fclus_slid2{background-color:#DAF3DA;}"),
-                                       "Please select parameters:",
-                                       tags$hr(),
-                                       #br(),
-                                       tags$head(
-                                         tags$style(HTML('#clst1{background-color:#F0FFF0;color:black;}'))
-                                       ),
-                                       
-                                       #column( width = 5,selectInput('clst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
-                                       
-                                       column(width = 12, textAreaInput("clst1","Select Cluster/s", 
-                                                                        placeholder =  "The cluster number must be separated by a commma, for example: 2,4,5,")),
-                                       
-                                       tags$head(
-                                         tags$style(HTML('#clst2{background-color:#800080;color:white;}'))
-                                       ),
-                                       #column( width = 6,numericInput("clst2", "Select complementary cluster:", 0, min = 0, max = Inf)),
-                                       #column( width = 6,selectInput('clst2','Select complementary cluster:',choices = levels(x = clus_pbmc()),selected = '1')),
-                                       br(),
-                                       tags$hr(),
-                                       br(),
-                                       column(width = 12, textAreaInput("clst2","Select complementary cluster/s", 
-                                                                        placeholder = "The cluster number must be separated by a commma, for example: 0,1,3")),
-                                       
-                                       column(width = 6, numericInput("clst_thres","logfc threshold",0.25,min = 0,max = Inf)),
-                                       column(width = 6, numericInput("clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
-                                       
-                                       column(width = 12,selectizeInput("de_test", "Select Test Method", 
-                                                                        c(Wilcox = "wilcox",
-                                                                          Bimod='bimod',
-                                                                          t_test='t',
-                                                                          Logistic_Regression= 'LR',
-                                                                          MAST = 'MAST'),
-                                                                        selected = 'wilcox')),        
-                                       
-                                       tags$head(
-                                         tags$style(HTML('#de_ok{background-color:#00008B;color:white;}'))
-                                       ),
-                                       actionButton('de_ok', 'Find markers'),
-                                       #conditionalPanel('input.de_ok == 1',
-                                       tags$hr(),
-                                       
-                                       tags$head(
-                                         tags$style(HTML('#fde_download{background-color:blue;color:white;}'))
-                                       ),
-                                       
-                                       checkboxInput('de_show',p('Show All Markers(Both Positive and Negative)')),
-                                       checkboxInput('fde_filter',p('Filtering Markers')),
-                                       conditionalPanel('input.fde_filter == 1',
-                                                        #tags$hr(),
-                                                        column(width = 12, numericInput("fde_clst_pvalue","Adjust p-value",0.05,min = 0,max = Inf)),
-                                                        radioButtons("fde_selection", "Markers Selection",
-                                                                     choices = c('Positive only' = "fde_pos",'Negative only' = "fde_neg"
-                                                                     ),selected = "fde_pos"),
-                                                        
-                                                        downloadButton("fde_download", "Save Filtered Markers as csv"),
-                                                        
-                                                        checkboxInput('fde_filter_hmap',p('Show Heatmap')),
-                                                        conditionalPanel('input.fde_filter_hmap == 1',
-                                                                         numericInput("fde_top","Top Genes:", 10, min = 2,max = Inf)              
-                                                        ),
-                                                        
-                                                        checkboxInput('fde_filter_show',p('Show Filtered Markers'))
-                                       )
-                                       
-                                       #)
-                          ),
-                          
-                          column(width = 6, br(), br(),DT::dataTableOutput("de_list")),
-                          column(width = 6, br(), br(),DT::dataTableOutput("fde_filtered_list")),
-                          column(width =12, br(), br(), plotOutput("fde_filter_hmap_plot"))
-                 )
-                 
-                 
-    ) # De tabset
+                         img(src = "line_font1.png"),
+                         p('Find markers (differentially expressed genes) for all clusters, 
+                           click the âFind All markersâ button.'),
+                         sidebarPanel(id = "allclus_slid", width = 6, height = 1000, 
+                                      tags$style("#allclus_slid{background-color:#F6F9CD;}"),
+                                      br(),
+                                      
+                                      
+                                      
+                                      column(width = 12,selectizeInput("all_de_test", "Select Test Method", 
+                                                                       c(Wilcox = "wilcox",
+                                                                         Bimod='bimod',
+                                                                         t_test='t',
+                                                                         Logistic_Regression= 'LR',
+                                                                         MAST = 'MAST'),
+                                                                       selected = 'wilcox')),        
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#all_de_ok{background-color:red;color:white;}'))
+                                      ),
+                                      actionButton('all_de_ok', 'Find All markers'),
+                                      
+                                      #tags$hr(),
+                                      tags$hr(),
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#allde_filtered_download{background-color:blue;color:white;}'))
+                                      ),
+                                      
+                                      
+                                      uiOutput("DE_download_UI"),
+                                      
+                                      #tags$hr(),
+                                      checkboxInput('all_de_show',p('Show All Markers')),
+                                      
+                                      #tags$hr(),
+                                      
+                                      
+                                      #.....................
+                                      checkboxInput('de_filter',p('Filtering Markers')),
+                                      conditionalPanel('input.de_filter == 1',
+                                                       column(width = 12, numericInput("all_clst_thres","Avg.logFC threshold",0.25,min = 0,max = Inf)),
+                                                       column(width = 12, numericInput("all_clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
+                                                       column(width = 12, numericInput("all_clst_pvalue","Adjusted p-value (p_val_adj<=input value)",0.05,min = 0,max = Inf)),
+                                                       #actionButton('de_ok_filter','Search Markers'),
+                                                       #tags$hr(),
+                                                       radioButtons("de_selection", "Markers Selection",
+                                                                    choices = c('Positive only' = "de_pos",'Negative only' = "de_neg"),selected = "de_pos"),
+                                                       checkboxInput('de_filter_show',p('Show filtered list')),
+                                                       
+                                                       downloadButton("allde_filtered_download", "Save Filtered Markers as csv"),
+                                                       
+                                                       checkboxInput('all_de_show_top',p('Show Top genes')),
+                                                       conditionalPanel('input.all_de_show_top == 1',
+                                                                        numericInput("all_de_top_gene", "Top DE genes(according to avg_logFC):", 5, min = 1, max = Inf),
+                                                                        tags$head(
+                                                                          tags$style(HTML('#top_genes_download{background-color:#800080;color:white;}'))
+                                                                        ),
+                                                                        #downloadButton("top_genes_download", "Save All Top genes as a text file"),
+                                                                        #tags$hr(),
+                                                                        downloadButton("top_pos_genes_download", "Save +ve Top genes as a text file"),
+                                                                        downloadButton("top_neg_genes_download", "Save -ve Top genes as a text file"),
+                                                                        #tags$hr(),
+                                                                        checkboxInput('de_filter_hmap',p('Show Heatmap(top genes)'))
+                                                       )
+                                                       
+                                                       
+                                                       
+                                      ), 
+                                      
+                                      # tags$hr(),
+                                      
+                                      radioButtons("de_ck_barplot", "Markers Barplot",
+                                                   choices = c('All DE genes' = "de_all_bar",'Filtered DE genes' = "de_filt_bar", 
+                                                               'Hide Bar Plot' = 'hide_de_bar'),
+                                                   selected = "de_all_bar")
+                                      
+                                      
+                                      
+                                      #,
+                                      
+                                      
+                                      #conditionalPanel('input.all_de_show == 1',
+                                      #downloadButton("all_de_download", "Download"))
+                         ),
+                         column(width =6,br(), br(),h6(htmlOutput("de_text"))),
+                         #column( width = 6 , downloadButton("all_de_download", "Download")),
+                         column(width = 6, br(), br(),DT::dataTableOutput("all_de_list")), 
+                         column(width = 6, br(), br(),DT::dataTableOutput("filt_de_list")),
+                         column(width =12, br(), br(), plotOutput("all_de_barplot")),
+                         column(width = 6, br(), br(),DT::dataTableOutput("all_de_show_top_list")),
+                         column(width =12, br(), br(), plotOutput("de_filter_hmap_plot"))
+                         ), # tabPanel of Find all markers 
+                
+                
+                tabPanel("Find markers by cluster",
+                         img(src = "line_font1.png"),
+                         p('A list of markers will be identified in a particular cluster (cluster 0 is selected by default) 
+                           ,compared to all remained clusters.'),
+                         sidebarPanel(id = "fclus_slid",width = 6,
+                                      tags$style("#fclus_slid{background-color:#FAE4E0;}"),
+                                      "Please select parameters:",
+                                      #tags$hr(),
+                                      br(),
+                                      tags$head(
+                                        tags$style(HTML('#sclst1{background-color:#0000FF;color:white;font-size: 15px;}'))
+                                      ),
+                                      
+                                      column( width = 12,selectInput('sclst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
+                                      #column( width = 5,numericInput("sclst1", "Select cluster:", 0, min = 0, max = Inf)),
+                                      column(width = 12, numericInput("sclst_thres","logfc threshold",0.25,min = 0,max = Inf)),
+                                      column(width = 12, numericInput("sclst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
+                                      
+                                      column(width = 12,selectizeInput("sde_test", "Select Test Method", 
+                                                                       c(Wilcox = "wilcox",
+                                                                         Bimod='bimod',
+                                                                         t_test='t',
+                                                                         Logistic_Regression= 'LR',
+                                                                         MAST = 'MAST'),
+                                                                       selected = 'wilcox')),
+                                      tags$head(
+                                        tags$style(HTML('#sde_ok{background-color:black;color:white;}'))
+                                      ),
+                                      actionButton('sde_ok', 'Find Markers'),
+                                      tags$hr(),
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#sfde_download{background-color:blue;color:white;}'))
+                                      ),
+                                      
+                                      
+                                      uiOutput("sDE_download_UI"),
+                                      
+                                      
+                                      tags$hr(),
+                                      checkboxInput('sde_show',p('Show All Markers(both positive and negative)')),
+                                      
+                                      
+                                      checkboxInput('sde_filter',p('Filtering Markes')),
+                                      conditionalPanel('input.sde_filter == 1',
+                                                       column(width = 12, numericInput("sde_clst_pvalue","Adjusted p-value (p_val_adj<=input value)",0.05,min = 0,max = Inf)),
+                                                       tags$hr(),
+                                                       radioButtons("sde_selection", "Markers Selection",
+                                                                    choices = c('Positive only' = "sde_pos",'Negative only' = "sde_neg"),selected = "sde_pos"),
+                                                       
+                                                       downloadButton("sfde_download", "Save Filtered Markers as csv"),
+                                                       
+                                                       checkboxInput('sde_filter_hmap',p('Show Heatmap')),
+                                                       conditionalPanel('input.sde_filter_hmap == 1',
+                                                                        numericInput("sde_top","Top Genes (accoring to avg_logFC):", 10, min = 2,max = Inf),
+                                                                        checkboxInput('sde_filter_hmap_cluster',p('Zoom the cluster'))
+                                                       ),
+                                                       
+                                                       checkboxInput('sde_filter_show',p('Show Filtered Markers'))
+                                                       
+                                      )
+                                      
+                         ),
+                         
+                         column(width = 6, br(), br(),DT::dataTableOutput("sde_list")),
+                         column(width = 6, br(), br(),DT::dataTableOutput("sde_filtered_list")),
+                         column(width =12, br(), br(), plotOutput("sde_filter_hmap_plot")),
+                         column(width =12, br(), br(), plotOutput("sde_filter_hmap_cluster_plot"))
+                         
+                         
+                         ), # End tabPanel for markers by cluster
+                
+                # ---------------------------------------------------------   
+                tabPanel("Find markers by clusters vs other clusters",
+                         img(src = "line_font1.png"),
+                         p('Find markers by cluster(s) versus cluster(s).
+                           The cluster number must be separated by a comma, and 
+                           no common cluster number is allowed as an input for both textboxes. 
+                           If the same cluster number is written in both input boxes, it will be shown an error message, âError: No features pass logfc.threshold thresholdâ.'),
+                         sidebarPanel(id = "fclus_slid2",width = 6, 
+                                      tags$style("#fclus_slid2{background-color:#DAF3DA;}"),
+                                      "Please select parameters:",
+                                      tags$hr(),
+                                      #br(),
+                                      tags$head(
+                                        tags$style(HTML('#clst1{background-color:#F0FFF0;color:black;}'))
+                                      ),
+                                      
+                                      #column( width = 5,selectInput('clst1','Select cluster',choices = levels(x = clus_pbmc()),selected = '0')),
+                                      
+                                      column(width = 12, textAreaInput("clst1","Select Cluster/s", 
+                                                                       placeholder =  "The cluster number must be separated by a commma, for example: 2,4,5,")),
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#clst2{background-color:#800080;color:white;}'))
+                                      ),
+                                      #column( width = 6,numericInput("clst2", "Select complementary cluster:", 0, min = 0, max = Inf)),
+                                      #column( width = 6,selectInput('clst2','Select complementary cluster:',choices = levels(x = clus_pbmc()),selected = '1')),
+                                      br(),
+                                      tags$hr(),
+                                      br(),
+                                      column(width = 12, textAreaInput("clst2","Select complementary cluster/s", 
+                                                                       placeholder = "The cluster number must be separated by a commma, for example: 0,1,3")),
+                                      
+                                      column(width = 12, numericInput("clst_thres","logfc threshold",0.25,min = 0,max = Inf)),
+                                      column(width = 12, numericInput("clst_pct","Min % (min.pct)",0.25,min = 0,max = Inf)),
+                                      
+                                      column(width = 12,selectizeInput("de_test", "Select Test Method", 
+                                                                       c(Wilcox = "wilcox",
+                                                                         Bimod='bimod',
+                                                                         t_test='t',
+                                                                         Logistic_Regression= 'LR',
+                                                                         MAST = 'MAST'),
+                                                                       selected = 'wilcox')),        
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#de_ok{background-color:#00008B;color:white;}'))
+                                      ),
+                                      actionButton('de_ok', 'Find markers'),
+                                      #conditionalPanel('input.de_ok == 1',
+                                      tags$hr(),
+                                      
+                                      tags$head(
+                                        tags$style(HTML('#fde_download{background-color:blue;color:white;}'))
+                                      ),
+                                      
+                                      checkboxInput('de_show',p('Show All Markers(Both Positive and Negative)')),
+                                      checkboxInput('fde_filter',p('Filtering Markers')),
+                                      conditionalPanel('input.fde_filter == 1',
+                                                       #tags$hr(),
+                                                       column(width = 12, numericInput("fde_clst_pvalue","Adjusted p-value (p_val_adj<=input value)",0.05,min = 0,max = Inf)),
+                                                       radioButtons("fde_selection", "Markers Selection",
+                                                                    choices = c('Positive only' = "fde_pos",'Negative only' = "fde_neg"
+                                                                    ),selected = "fde_pos"),
+                                                       
+                                                       downloadButton("fde_download", "Save Filtered Markers as csv"),
+                                                       
+                                                       checkboxInput('fde_filter_hmap',p('Show Heatmap')),
+                                                       conditionalPanel('input.fde_filter_hmap == 1',
+                                                                        numericInput("fde_top","Top Genes:", 10, min = 2,max = Inf)              
+                                                       ),
+                                                       
+                                                       checkboxInput('fde_filter_show',p('Show Filtered Markers'))
+                                      )
+                                      
+                                      #)
+                         ),
+                         
+                         column(width = 6, br(), br(),DT::dataTableOutput("de_list")),
+                         column(width = 6, br(), br(),DT::dataTableOutput("fde_filtered_list")),
+                         column(width =12, br(), br(), plotOutput("fde_filter_hmap_plot"))
+                         )
+                
+                
+                ) # De tabset
     
   })
   
@@ -1025,30 +1078,41 @@ server <- function(input, output,session) {
     
   })
   
-  # ...... All Top DE genes download 
-  output$top_genes_download<- downloadHandler(
-    if(is.null(all_markers())) return(),
-    filename = function() {
-      paste("top_de_genes", ".txt", sep = "")
-    },
+  # ...... All Top DE gene list download as txt  
+  #output$top_genes_download<- downloadHandler(
+   # if(is.null(all_markers())) return(),
+    #filename = function() {
+     # paste("top_de_genes", ".txt", sep = "")
+    #},
     
-    content = function(file) {
+    #content = function(file) {
+     # dplyr::filter(all_markers(),avg_logFC>=input$all_clst_thres, pct.1>=input$all_clst_pct , p_val_adj<= input$all_clst_pvalue)
       
-      tgenesd<- fmarkers() %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene, wt = avg_logFC)
+      #tgenesd<- fmarkers() %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene, wt = avg_logFC)
       
       # gene name
-      tgene_name<-dplyr::select(tgenesd,gene)
+      #tgene_name<-dplyr::select(tgenesd,gene)
       #dim(x = tgene_name)
-      genes_list<- tgene_name[,'gene']
-      genes_list<- data.frame(genes_list)
+      #genes_list<- tgene_name[,'gene']
+      #genes_list<- data.frame(genes_list)
       
-      ugenes<-unique(genes_list[,1:1])
+      #ugenes<-unique(genes_list[,1:1])
       
       #fileConn<-file("Top_genes.txt")
-      writeLines(c(ugenes), file)
+      #writeLines(c(ugenes), file)
       #close(file)
       
-    }
+    #}
+  #)
+  
+  # Download filtered DE gene list .........
+  output$allde_filtered_download<- downloadHandler(
+    if(is.null(fmarkers())) return(),
+    
+    filename = function() {paste("allde_Filtered_Markers", ".csv", sep = "")},
+    content = function(file) {
+      #de_data<-data.matrix(fdegenes())
+      write.csv(fmarkers(), file, row.names = TRUE)}
   )
   
   # ............ Positive Top DE genes download
@@ -1060,10 +1124,14 @@ server <- function(input, output,session) {
     
     content = function(file) {
       
-      tgenesd<- all_markers() %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene, wt = avg_logFC)
+      fmarkers_top<- dplyr::filter(all_markers(),avg_logFC>=input$all_clst_thres, pct.1>=input$all_clst_pct , p_val_adj<= input$all_clst_pvalue)
+      
+      pos_top_genes_hmap<- fmarkers_top %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene , wt = avg_logFC)
+      sort_pos_top_genes_hmap<- pos_top_genes_hmap[order(-pos_top_genes_hmap$avg_logFC),] # descending order 
+      sort_pos_top_genes_hmap<- sort_pos_top_genes_hmap[order(sort_pos_top_genes_hmap$cluster),] # descending order by cluster
       
       # gene name
-      tgene_name<-dplyr::select(tgenesd,gene)
+      tgene_name<-dplyr::select(sort_pos_top_genes_hmap,gene)
       #dim(x = tgene_name)
       genes_list<- tgene_name[,'gene']
       genes_list<- data.frame(genes_list)
@@ -1086,10 +1154,17 @@ server <- function(input, output,session) {
     
     content = function(file) {
       
-      tgenesd<- all_markers() %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene, wt = avg_logFC)
+      neg_top<- dplyr::filter(all_markers(),avg_logFC<=(input$all_clst_thres)*(-1), pct.1>=input$all_clst_pct, p_val_adj<= input$all_clst_pvalue)
+      
+      neg_top$avg_logFC <- neg_top$avg_logFC * (-1) # make positive to find top genes
+      neg_tgenes<- neg_top %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene, wt = avg_logFC)
+      #dim(neg_tgenes)
+      #print.data.frame(neg_tgenes) # before sort
+      sort_neg_tgenes<-neg_tgenes[order(-neg_tgenes$avg_logFC),]
+      sort_neg_tgenes <- sort_neg_tgenes[order(sort_neg_tgenes$cluster),] # sort by cluster
       
       # gene name
-      tgene_name<-dplyr::select(tgenesd,gene)
+      tgene_name<-dplyr::select(sort_neg_tgenes,gene)
       #dim(x = tgene_name)
       genes_list<- tgene_name[,'gene']
       genes_list<- data.frame(genes_list)
@@ -1113,7 +1188,7 @@ server <- function(input, output,session) {
       pos_top_genes_hmap<- fmarkers() %>% group_by(cluster) %>% top_n(n = input$all_de_top_gene , wt = avg_logFC)
       sort_pos_top_genes_hmap<- pos_top_genes_hmap[order(-pos_top_genes_hmap$avg_logFC),] # descending order 
       sort_pos_top_genes_hmap <- sort_pos_top_genes_hmap[order(sort_pos_top_genes_hmap$cluster),] # descending order by cluster
-      DoHeatmap(clus_pbmc(), features = sort_pos_top_genes_hmap$gene) + NoLegend() # heatmap
+      DoHeatmap(clus_pbmc(), features = sort_pos_top_genes_hmap$gene) # heatmap
     }
     
     else if(input$de_selection == "de_neg") {
@@ -1269,6 +1344,16 @@ server <- function(input, output,session) {
     dplyr::select(sfd,Gene, p_val,avg_logFC,pct.1,pct.2,p_val_adj)
   })
   
+  # Download filtered DE gene list .........
+  output$sfde_download<- downloadHandler(
+    if(is.null(sde_fmarkers())) return(),
+    
+    filename = function() {paste("filtered_markers_specific_cluster", ".csv", sep = "")},
+    content = function(file) {
+      #de_data<-data.matrix(fdegenes())
+      write.csv(sde_fmarkers(), file, row.names = TRUE)}
+  )
+  
   # .....................Show Fitered Markers
   output$sde_filtered_list = DT::renderDataTable({
     if(is.null(sde_fmarkers())) return()
@@ -1303,7 +1388,7 @@ server <- function(input, output,session) {
     
     
   })
-  # ................................................. find markers: cluster vs other cluster..........
+  # ................................................................................................ find markers: cluster vs other cluster..........
   
   cluster_markers<-reactive({
     if(is.null(clus_pbmc())) return()
@@ -1395,14 +1480,17 @@ server <- function(input, output,session) {
     if(is.null(fdegenes())) return()
     else if (input$fde_filter_hmap == FALSE) return()
     
-    cls_Num1<-unlist(strsplit(input$clst1, ","))
-    
-    cls_Numi1<-as.integer(cls_Num1) # cluster number
-    
     fde_top<- fdegenes()[1:input$fde_top,]
-    print(cls_Numi1)
-    fd_hmap_cells<- WhichCells(clus_pbmc(), idents = cls_Numi1)
-    DoHeatmap(clus_pbmc()[,fd_hmap_cells], features = fde_top$Gene, group.bar = T) # heatmap
+    
+    # ...heatmap for a specific cluster, i.e. select cluster/s
+    #cls_Num1<-unlist(strsplit(input$clst1, ","))
+    
+    #cls_Numi1<-as.integer(cls_Num1) # cluster number
+    
+    #print(cls_Numi1)
+    #fd_hmap_cells<- WhichCells(clus_pbmc(), idents = cls_Numi1)
+    #DoHeatmap(clus_pbmc()[,fd_hmap_cells], features = fde_top$Gene, group.bar = T) # heatmap
+    DoHeatmap(clus_pbmc(), features = fde_top$Gene, group.bar = TRUE) # heatmap
     
   })
   
@@ -1412,7 +1500,8 @@ server <- function(input, output,session) {
     
     gene_list<-  unlist(strsplit(input$vln_genes, "\n"))
     if(is.null(gene_list)) return()
-    rev(gene_list)
+    #rev(gene_list)
+    gene_list
     
   })
   
@@ -1450,7 +1539,8 @@ server <- function(input, output,session) {
     
     gene_list<-  unlist(strsplit(input$fetr_genes, "\n"))
     if(is.null(gene_list)) return()
-    rev(gene_list)
+    #rev(gene_list)
+    gene_list
     
   })
   
@@ -1529,8 +1619,20 @@ server <- function(input, output,session) {
         # return(syms[,2]) })
         #go.gs.sym
         
-        go.bp
+        #go.bp
+        gte<- names(go.bp)
         
+        #gte
+        
+        txp<- substr(gte, 12, nchar(gte))
+        #x1
+        #names(ntem)
+        # to upper first letter
+        #x1<-names(ntem)
+        substr(txp, 1, 1) <- toupper(substr(txp, 1, 1))
+        #x1
+        names(go.bp)<- txp
+        go.bp
         
       }
     })
@@ -1551,11 +1653,13 @@ server <- function(input, output,session) {
       if(input$path_input_opt == "path_clus")
       {
         tde<- scluster_markers()
+        #tde<- tde[order(-tde$avg_logFC),]
       }
       
       else if(input$path_input_opt == "path_clus_vs_clus")
       {
         tde<- cluster_markers()
+        #tde<- tde[order(-tde$avg_logFC),]
         
         
       }
@@ -1655,8 +1759,9 @@ server <- function(input, output,session) {
            y = '-log10(padj)') +
       #scale_size_continuous(name = 'Size of\nthe pathway',range = c(2,8)) +
       theme_grey(base_size =14 ) +
-      theme(axis.text.x = element_text(angle = -23, hjust = 0, size = 11, color  = "Black"),
-            plot.margin = margin(10,10,5,5)) + scale_color_gradient("Size of\nthe pathway" , low="blue", high="red")
+      theme(axis.text.x = element_text(angle = -23, hjust = 0, size = 11, color  = "Black")
+            ,plot.margin = margin(10,10,5,5)
+            ) + scale_color_gradient("Size of\nthe pathway" , low="blue", high="red")
     
     
   })
@@ -1775,11 +1880,13 @@ server <- function(input, output,session) {
     if(input$path_input_opt == "path_clus")
     {
       tde_data<- scluster_markers()
+      #tde_data<- tde_data[order(-tde_data$avg_logFC),]
     }
     
     else if(input$path_input_opt == "path_clus_vs_clus")
     {
       tde_data<- cluster_markers()
+      #tde_data<- tde_data[order(-tde_data$avg_logFC),]
       
     }
     
@@ -1847,6 +1954,24 @@ server <- function(input, output,session) {
     if(is.null(path_genes())) return()
     else if(input$path_hmap==FALSE) return()
     
+    #if(input$path_input_opt == "path_clus")
+    #{
+     # tde_data_2<- scluster_markers()
+     # tde_data_2<- tde_data_2[path_genes(),]
+      #tde_data_2<- tde_data_2[order(-tde_data_2$avg_logFC),]
+      #print(rownames(tde_data_2))
+      #print(tde_data_2)
+    #}
+    
+    #else if(input$path_input_opt == "path_clus_vs_clus")
+    #{
+     # tde_data_2<- cluster_markers()
+      #tde_data_2<- tde_data_2[path_genes(),]
+      #tde_data_2<- tde_data_2[order(-tde_data_2$avg_logFC),]
+    #}
+    
+    #print(rownames(tde_data_2))
+    #path_genes_i<- rownames(tde_data_2)
     DoHeatmap(clus_pbmc(), features = path_genes() , group.bar = T) + 
       ggtitle(paste("Pathway Name:", path_title))
   })
@@ -1854,108 +1979,108 @@ server <- function(input, output,session) {
   
   #--------------------------------------------------------------------- Dynamic Heatmap -------------------------------------
   #output$dhmap_input_UI<- renderUI({
-    
-   # if(input$dhmap_input_opt == "dhmap_file_inp")
-    #{
-      
-     # fileInput("dhmap_file", "Input Gene list as a text file:")
-      
-    #}
-    
-    #else if (input$dhmap_input_opt == "dhmap_write_inp")
-    #{
-     # textAreaInput("dh_map_genelist","Write Gene List", width = "200px", height = "150px", placeholder = "Please write gene sybmols: one gene per line")
-      
-    #}
-    
+  
+  # if(input$dhmap_input_opt == "dhmap_file_inp")
+  #{
+  
+  # fileInput("dhmap_file", "Input Gene list as a text file:")
+  
+  #}
+  
+  #else if (input$dhmap_input_opt == "dhmap_write_inp")
+  #{
+  # textAreaInput("dh_map_genelist","Write Gene List", width = "200px", height = "150px", placeholder = "Please write gene sybmols: one gene per line")
+  
+  #}
+  
   #})  
   
   # upload gene list processing
   #dhmap_data<-reactive({
-   # if (input$dhmap_input_opt == "dhmap_file_inp")
-    #{
-     # inFile<-input$dhmap_file
-      #if(is.null(inFile)) return()
-      #conn2 <- file(inFile$datapath,open="r")
-      #linn <-readLines(conn2)
-      #close(conn2)
-      #linn
-    #}
-    
-    #else if(input$dhmap_input_opt == "dhmap_write_inp")
-    #{
-      
-     # gene_list<-  unlist(strsplit(input$dh_map_genelist, "\n"))
-      #if(is.null(gene_list)) return()
-      #gene_list
-    #}
-    
+  # if (input$dhmap_input_opt == "dhmap_file_inp")
+  #{
+  # inFile<-input$dhmap_file
+  #if(is.null(inFile)) return()
+  #conn2 <- file(inFile$datapath,open="r")
+  #linn <-readLines(conn2)
+  #close(conn2)
+  #linn
+  #}
+  
+  #else if(input$dhmap_input_opt == "dhmap_write_inp")
+  #{
+  
+  # gene_list<-  unlist(strsplit(input$dh_map_genelist, "\n"))
+  #if(is.null(gene_list)) return()
+  #gene_list
+  #}
+  
   #})
   
   
   #output$dh_plot <- renderPlotly({
-    
-   # if(is.null(dhmap_data())) return()
-    #else if(dhmap_data() == 10) return()
-    #isolate({
-    #withProgress(message = 'Calculation in progress',
-    # detail = 'This may take a while...', value = 0, {
-    #for (i in 1:15) {
-    # incProgress(1/15)
-    # Sys.sleep(0.25)
-    # }
-    #})
-    
-    #distfun_row = function(x) dist(x, method = input$distFun_row)
-    #distfun_col =  function(x) dist(x, method = input$distFun_col)
-    
-    #hclustfun_row = function(x) hclust(x, method = input$hclustFun_row)
-    #hclustfun_col = function(x) hclust(x, method = input$hclustFun_col)
-    
-    #sub_genes <- dhmap_data() # gene names 
-    #rev_gene_list<-rev(sub_genes) # reversed gene list 
-    #m_sub  <- GetAssayData(object = scdata(), slot = "scale.data")[rev_gene_list,] # used scaled data
-    
-    #heatmaply(m_sub,seriate = "mean", 
-    #          row_dend_left = T, 
-     #         plot_method = "plotly",showticklabels = c(F,T),labCol = colnames('NA'),
-      #        dendrogram = input$dtype,
-       #       k_col = input$c, 
-        #      k_row = input$r,
-         #     distfun_row =  distfun_row,
-          #    distfun_col =  distfun_col,
-           #   branches_lwd = input$branches_lwd, 
-            #  hclustfun_col = hclustfun_col,
-             # hclustfun_row = hclustfun_row)
-    
-    #sub_genes <- dhmap_data()
-    #})
-    
-#  })
+  
+  # if(is.null(dhmap_data())) return()
+  #else if(dhmap_data() == 10) return()
+  #isolate({
+  #withProgress(message = 'Calculation in progress',
+  # detail = 'This may take a while...', value = 0, {
+  #for (i in 1:15) {
+  # incProgress(1/15)
+  # Sys.sleep(0.25)
+  # }
+  #})
+  
+  #distfun_row = function(x) dist(x, method = input$distFun_row)
+  #distfun_col =  function(x) dist(x, method = input$distFun_col)
+  
+  #hclustfun_row = function(x) hclust(x, method = input$hclustFun_row)
+  #hclustfun_col = function(x) hclust(x, method = input$hclustFun_col)
+  
+  #sub_genes <- dhmap_data() # gene names 
+  #rev_gene_list<-rev(sub_genes) # reversed gene list 
+  #m_sub  <- GetAssayData(object = scdata(), slot = "scale.data")[rev_gene_list,] # used scaled data
+  
+  #heatmaply(m_sub,seriate = "mean", 
+  #          row_dend_left = T, 
+  #         plot_method = "plotly",showticklabels = c(F,T),labCol = colnames('NA'),
+  #        dendrogram = input$dtype,
+  #       k_col = input$c, 
+  #      k_row = input$r,
+  #     distfun_row =  distfun_row,
+  #    distfun_col =  distfun_col,
+  #   branches_lwd = input$branches_lwd, 
+  #  hclustfun_col = hclustfun_col,
+  # hclustfun_row = hclustfun_row)
+  
+  #sub_genes <- dhmap_data()
+  #})
+  
+  #  })
   
   #Color Pallete UI ----
   #output$colUI<-renderUI({
-   # colSel=ifelse(input$transform_fun=='cor','RdBu','Vidiris')
-    #selectizeInput(inputId ="pal", label ="Select Color Palette",
-     #              choices = c('Vidiris (Sequential)'="viridis",
-      #                         'Magma (Sequential)'="magma",
-       #                        'Plasma (Sequential)'="plasma",
-        #                       'Inferno (Sequential)'="inferno",
-         #                      'Magma (Sequential)'="magma",
-          #                     'Magma (Sequential)'="magma",
-                               
-           #                    'RdBu (Diverging)'="RdBu",
-            #                   'RdYlBu (Diverging)'="RdYlBu",
-             #                  'RdYlGn (Diverging)'="RdYlGn",
-              #                 'BrBG (Diverging)'="BrBG",
-               #                'Spectral (Diverging)'="Spectral",
-                               
-                 #              'BuGn (Sequential)'='BuGn',
-                #               'PuBuGn (Sequential)'='PuBuGn',
-                  #             'YlOrRd (Sequential)'='YlOrRd',
-                    #           'Heat (Sequential)'='heat.colors',
-                   #            'Grey (Sequential)'='grey.colors'),
-                   #selected=colSel)
+  # colSel=ifelse(input$transform_fun=='cor','RdBu','Vidiris')
+  #selectizeInput(inputId ="pal", label ="Select Color Palette",
+  #              choices = c('Vidiris (Sequential)'="viridis",
+  #                         'Magma (Sequential)'="magma",
+  #                        'Plasma (Sequential)'="plasma",
+  #                       'Inferno (Sequential)'="inferno",
+  #                      'Magma (Sequential)'="magma",
+  #                     'Magma (Sequential)'="magma",
+  
+  #                    'RdBu (Diverging)'="RdBu",
+  #                   'RdYlBu (Diverging)'="RdYlBu",
+  #                  'RdYlGn (Diverging)'="RdYlGn",
+  #                 'BrBG (Diverging)'="BrBG",
+  #                'Spectral (Diverging)'="Spectral",
+  
+  #              'BuGn (Sequential)'='BuGn',
+  #               'PuBuGn (Sequential)'='PuBuGn',
+  #             'YlOrRd (Sequential)'='YlOrRd',
+  #           'Heat (Sequential)'='heat.colors',
+  #            'Grey (Sequential)'='grey.colors'),
+  #selected=colSel)
   #})
   
   
@@ -2084,7 +2209,7 @@ server <- function(input, output,session) {
     colour1 = rainbow(length(rownames(tm_sub)))
     pre<-prcomp(tm_sub)
     autoplotly(pre, data = tm_sub
-               , colour = colour1, size = 3)
+               , colour = colour1, size = 1.5)
   })
   
   # T-sne plot
@@ -2307,7 +2432,10 @@ server <- function(input, output,session) {
                                   num_clusters = input$tray_pseu_clst, 
                                   cores = 4,
                                   hmcols = NULL,
-                                  show_rownames = T)
+                                  show_rownames = TRUE,
+                                  trend_formula = "~sm.ns(Pseudotime)"
+                                  )
+          
           # Increment the progress bar, and update the detail text.
           incProgress(10, detail = paste("Completed ", i*100,"%"))
           # Pause for 0.1 seconds to simulate a long computation.
