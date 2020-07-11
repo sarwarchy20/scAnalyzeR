@@ -1,4 +1,5 @@
 
+#library(pryr)
 
 library(shiny)
 library(shinyjs)
@@ -17,7 +18,23 @@ library(viridis)
 library(autoplotly)
 library("ggpubr")
 library(DT)
-#library(Rmagic)
+library(Seurat)
+library(dplyr)
+#library(reticulate) # For UMAP
+library(tidyverse)
+library(heatmap3) # static heatmap
+library(KEGG.db)
+library(fgsea)
+library(org.Hs.eg.db) 
+library(org.Mm.eg.db) 
+library(GO.db)
+#library(pathview)
+library(gage)
+library(monocle)
+library("Matrix")
+library(cowplot)
+library(MAST)
+#library("leiden")
 #setwd("E:/Shiny R/sc-vieweR1")
 # **************************************** User Interafce of sc-AnalyzeR *********************************************
 
@@ -209,8 +226,8 @@ ui <-shinyUI(
                                                             tags$style(HTML('#th{background-color:#8B0000;color:white;}'))
                                                           ),
                                                           actionButton('th', 'Submit'),
-                                         checkboxInput('fth_mdatack',p('Plot Meta Data')),
-                                         checkboxInput('fth_gene_summary',p('Plot Gene Summary'))
+                                                          checkboxInput('fth_mdatack',p('Plot Meta Data')),
+                                                          checkboxInput('fth_gene_summary',p('Plot Gene Summary'))
                                          )
                                          
                                          
@@ -302,6 +319,12 @@ ui <-shinyUI(
                                          checkboxInput('ck_pca',p('PCA Plot')),
                                          #tags$hr(),
                                          checkboxInput('ck_tsne_plot',p('t-SNE Plot')),
+                                         
+                                         conditionalPanel('input.ck_tsne_plot==1',
+                                                          "Please select PCs for the t-SNE plot",
+                                                         br(),
+                                                         column(width=12,numericInput("pcs_no", "Number of PCs:", 1 ,min = 1, max = Inf))
+                                                         ),
                                          #tags$hr(),
                                          checkboxInput('pc_print',p('Print PCA')),
                                          # tags$hr(),
@@ -336,12 +359,12 @@ ui <-shinyUI(
                             column(width = 6, br(),verbatimTextOutput("pca_list")),
                             column(width = 8, br(), plotOutput("pc_jac_show")),
                             column(width = 6, br(), plotOutput("pc_elbow_plot")),
-                            column(width =10, br(), br(), plotOutput("pc_hplot"))
+                            column(width =12, br(), br(), plotOutput("pc_hplot"))
                             #,column(width = 8, br(), plotOutput("tsnep"))
                    ),# end of tabPanel for PCA
                    tabPanel("Clustering", 
                             img(src = "line_font.png"),
-                            sidebarPanel(id  = "cls_slid", width = 4,
+                            sidebarPanel(id  = "cls_slid", width = 6,
                                          tags$style("#cls_slid{background-color:#A3CFF5;}"),
                                          "Please select the PCs for clustering:",
                                          br(),
@@ -363,11 +386,20 @@ ui <-shinyUI(
                                          checkboxInput('clus_tsne',p('t-SNE plot')),
                                          
                                          tags$hr(),
+                                         checkboxInput("cell_type",p('Assigning Cell type (t-SNE plot)')),
+                                        
+                                         conditionalPanel('input.cell_type==1',
+                                                          
+                                                          uiOutput("cell_type_input_UI")
+                                                          ),
+                                         
+                                         tags$hr(),
                                          checkboxInput('clus_barplot',p('Show Cluster Bar Plot'))
                                          #selectInput('Clusm','Clustering Method',choices = c("K-Means", "Hierarchical Clustering"),selected = 'K-Means')
                             ), # end of sidebarPanel for Clustering
                             column(width =6,br(), br(),h6(htmlOutput("clus_text"))),
                             column(width =6, br(), br(), plotOutput("clus_tsne_plot")),
+                            column(width =6, br(), br(), plotOutput("clus_cell_type_plot")),
                             #column(width =6, br(), br(), plotOutput("clus_umap_plot")),
                             column(width =12, br(), br(), plotOutput("clus_barplot_show"))
                    ), # end of tabpanel of Clustering
@@ -411,42 +443,42 @@ ui <-shinyUI(
                                                    column(width = 12,br(), br(), plotOutput("fetr_plot"))
                                           ),
                                           # ------Dynamic Heatmap
-                                        #  tabPanel("Dynamic Heatmap",
-                                                   #img(src = "line_font1.png"),
-                                                  # sidebarPanel(id  = "dhm_slid", width = 5, 
-                                                               # tags$style("#dhm_slid{background-color:#DEF3C9;}"),
-
-                                                                # Input: Select the options----
-                                                                #radioButtons("dhmap_input_opt", h3("Choose the Input Option"),
-                                                                   #          choices = c('Input Gene list as a text file' = "dhmap_file_inp",
-                                                                  #                       'Write Gene List' = "dhmap_write_inp"),
-                                                                 #            selected = "dhmap_file_inp"),
-                                                                
-                                                                #uiOutput("dhmap_input_UI"),
-                                                                
-                                                          #      
-                                                          #      br(),h5('Row dendrogram'),
-                                                          #      column(width=6,selectizeInput("distFun_row", "Distance method", c(Euclidean="euclidean",Maximum='maximum',Manhattan='manhattan',Canberra='canberra',Binary='binary',Minkowski='minkowski'),selected = 'euclidean')),
-                                                          #      column(width=6,selectizeInput("hclustFun_row", "Clustering linkage", c(Complete= "complete",Single= "single",Average= "average",Mcquitty= "mcquitty",Median= "median",Centroid= "centroid",Ward.D= "ward.D",Ward.D2= "ward.D2"),selected = 'complete')),
-                                                          #      column(width=12,sliderInput("r", "Number of Clusters", min = 1, max = 15, value = 2)) ,
-                                                          #      
-                                                         #       br(),br(),br(),br(),br(),br(),br(),br(),br(),hr(),h3('Column dendrogram'),
-                                                        #        column(width=6,selectizeInput("distFun_col", "Distance method", c(Euclidean="euclidean",Maximum='maximum',Manhattan='manhattan',Canberra='canberra',Binary='binary',Minkowski='minkowski'),selected = 'euclidean')),
-                                                       #         column(width=6,selectizeInput("hclustFun_col", "Clustering linkage", c(Complete= "complete",Single= "single",Average= "average",Mcquitty= "mcquitty",Median= "median",Centroid= "centroid",Ward.D= "ward.D",Ward.D2= "ward.D2"),selected = 'complete')),
-                                                      #          column(width=12,sliderInput("c", "Number of Clusters", min = 1, max = 15, value = 2)),
-                                                     #           
-                                                    #            br(),br(),br(),br(),br(),br(),br(),br(),br(),hr(),   #h4('Color Manipulation'),
-                                                   #             h6(uiOutput('colUI')),
-                                                  #              #column(3,checkboxInput('showColor','Color'))
-                                                  #              #br(),#
-                                                  #              hr(), 
-                                                 #               h2('Dendrogram Manipulation'),
-                                                #                selectInput('dtype','Dendrogram Type',choices = c("both", "row", "column", "none"),selected = 'both'),
-                                               #                 sliderInput('branches_lwd','Dendrogram Branch Width',value = 0.6,min=0,max=5,step = 0.1)
-                                              #                  
-                                             #      ) # end of sidebarPanel for Dynamic Heatmap
-                                            #       
-                                           #        , column(width =7,  br(),plotlyOutput("dh_plot", height='600px'))
+                                          #  tabPanel("Dynamic Heatmap",
+                                          #img(src = "line_font1.png"),
+                                          # sidebarPanel(id  = "dhm_slid", width = 5, 
+                                          # tags$style("#dhm_slid{background-color:#DEF3C9;}"),
+                                          
+                                          # Input: Select the options----
+                                          #radioButtons("dhmap_input_opt", h3("Choose the Input Option"),
+                                          #          choices = c('Input Gene list as a text file' = "dhmap_file_inp",
+                                          #                       'Write Gene List' = "dhmap_write_inp"),
+                                          #            selected = "dhmap_file_inp"),
+                                          
+                                          #uiOutput("dhmap_input_UI"),
+                                          
+                                          #      
+                                          #      br(),h5('Row dendrogram'),
+                                          #      column(width=6,selectizeInput("distFun_row", "Distance method", c(Euclidean="euclidean",Maximum='maximum',Manhattan='manhattan',Canberra='canberra',Binary='binary',Minkowski='minkowski'),selected = 'euclidean')),
+                                          #      column(width=6,selectizeInput("hclustFun_row", "Clustering linkage", c(Complete= "complete",Single= "single",Average= "average",Mcquitty= "mcquitty",Median= "median",Centroid= "centroid",Ward.D= "ward.D",Ward.D2= "ward.D2"),selected = 'complete')),
+                                          #      column(width=12,sliderInput("r", "Number of Clusters", min = 1, max = 15, value = 2)) ,
+                                          #      
+                                          #       br(),br(),br(),br(),br(),br(),br(),br(),br(),hr(),h3('Column dendrogram'),
+                                          #        column(width=6,selectizeInput("distFun_col", "Distance method", c(Euclidean="euclidean",Maximum='maximum',Manhattan='manhattan',Canberra='canberra',Binary='binary',Minkowski='minkowski'),selected = 'euclidean')),
+                                          #         column(width=6,selectizeInput("hclustFun_col", "Clustering linkage", c(Complete= "complete",Single= "single",Average= "average",Mcquitty= "mcquitty",Median= "median",Centroid= "centroid",Ward.D= "ward.D",Ward.D2= "ward.D2"),selected = 'complete')),
+                                          #          column(width=12,sliderInput("c", "Number of Clusters", min = 1, max = 15, value = 2)),
+                                          #           
+                                          #            br(),br(),br(),br(),br(),br(),br(),br(),br(),hr(),   #h4('Color Manipulation'),
+                                          #             h6(uiOutput('colUI')),
+                                          #              #column(3,checkboxInput('showColor','Color'))
+                                          #              #br(),#
+                                          #              hr(), 
+                                          #               h2('Dendrogram Manipulation'),
+                                          #                selectInput('dtype','Dendrogram Type',choices = c("both", "row", "column", "none"),selected = 'both'),
+                                          #                 sliderInput('branches_lwd','Dendrogram Branch Width',value = 0.6,min=0,max=5,step = 0.1)
+                                          #                  
+                                          #      ) # end of sidebarPanel for Dynamic Heatmap
+                                          #       
+                                          #        , column(width =7,  br(),plotlyOutput("dh_plot", height='600px'))
                                           #),   # end of the Dynamic heatmap 
                                           
                                           
@@ -476,7 +508,8 @@ ui <-shinyUI(
                                                    ), # end of sidebarPanel for Static Heatmap
                                                    
                                                    
-                                                   column(width =8,  br(),br(), plotOutput("sta_hmap", height='800px'))
+                                                   #column(width =8,  br(),br(), plotOutput("sta_hmap", height = '800px'))
+                                                   column(width =12,  br(),br(), plotOutput("sta_hmap"))
                                                    
                                           ), # End of tabPanel for Static Heatmap
                                           
@@ -490,7 +523,7 @@ ui <-shinyUI(
                                                                 fileInput("dpca_file", "Input Gene list as a text file (one gene per line)")
                                                                 
                                                    ),
-                                                   column(width = 12,br(), br(), plotlyOutput("dpcaplot", height='600px'))
+                                                   column(width = 8,br(), br(), plotlyOutput("dpcaplot", height='400px'))
                                                    
                                           ), # End of tabPanel for Dynamic PCA
                                           
@@ -600,7 +633,7 @@ ui <-shinyUI(
                                          
                             ), # end of sidebarPanel for Pathways
                             column(width =6,br(), br(),DT::dataTableOutput("path_list_table")),
-                            column(width =10, br(), br(), plotOutput("path_show")),
+                            column(width =12, br(), br(), plotOutput("path_show")),
                             column(width = 8, br(),verbatimTextOutput("path_gene_list")),
                             column(width =10, br(), br(), plotOutput("path_hmap_show"))
                    ),
