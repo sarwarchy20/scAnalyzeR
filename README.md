@@ -2,7 +2,7 @@
 **scAnalyzeR:** a comprehensive software package with graphical user interface for single-cell RNA sequencing analysis
 
 # How to run the scAnalyzeR?
-There are two different ways to setting up the pipeline in your own machine: 
+There are two different ways to setting up the pipeline in your own machine: <br/>
 **Way 1:** using from Docker image (**strongly recommended**)
 1.	Download and install [Docker](https://www.docker.com/products/docker-desktop)
 2.	Pull the docker image by running the following command:
