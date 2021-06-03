@@ -2,29 +2,41 @@
 **scAnalyzeR:** a comprehensive software package with graphical user interface for single-cell RNA sequencing analysis
 
 # How to run the scAnalyzeR?
-Firstly, you need to download and install the following softwares(install R then RStudio):
-###### Download and install R and RStudio on your machine,
-`1. Download and install R (v-3.6.1 or above):` https://cran.r-project.org/ <br/>
-`2. Download and install RStudio: RStudio (v-1.1.456 or above):` https://rstudio.com/products/rstudio/download/ 
-
-After installed the R and RStudio on your machine , then you also need to install the shiny package. 
-Please run the following code on RStudio to install the shiny package: <br/>
-
-`install.packages("shiny")` <br/>
-Now, your machine is ready for running the scAnalyzeR app.<br/>
-
-## There are many ways to run the scAnalyzeR:<br>
-**Easiest way is to use runGitHub**<br/>
-Run the following code of line on RStudio.<br/>
-`shiny::runGitHub("scAnalyzeR", "sarwar-chy")` <br/>
-or <br/>
-**Run a tar or zip file directly** <br/>
-`shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.tar.gz")` <br/>
-`shiny::runUrl("https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip")` <br/>
-
-**If you want to use it locally, you can simply clone this(https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip) repository as well as unzip it and run the app using RStudio.** <br/>
-To run the app on your local computer, use RStudio to run the following code and replace ~ with the location of your scAnalyzeR-master folder.<br/>
-`shiny::runApp('~/scAnalyzeR-master/')`
+There are two different ways to setting up the pipeline in your own machine: 
+#### Way 1: using from Docker image (strongly recommended)
+1.	Download and install Docker (https://www.docker.com/products/docker-desktop)
+2.	Pull the docker image by running the following command:
+  ```
+   docker pull gscdocker/scanalyzer:1.0 
+  ```
+3.	Run the docker image locally on your computer and access the link:
+  To run the docker image, execute the following command:
+  ```
+  docker run -d --rm -p 3838:3838 gscdocker/scanalyzer:1.0
+  ```
+  After running the docker image successfully, open the following link on a web browser (e.g., Firefox, Google Chrome) to access the pipeline: 
+  ```
+  http://localhost:3838/
+  ```
+#### Way 2: using from source
+Firstly, you need to download and install following softwares (install R then RStudio):
+Download and install R and RStudio on your machine,
+i.	Download and install R (v-3.6.2 or above): https://cran.r-project.org/ 
+ii.	Download and install RStudio: RStudio (v-1.1.456 or above): https://rstudio.com/products/rstudio/download/
+After installing the R and RStudio on your machine successfully, then, you need to clone this (https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip) repository as well as unzip it.
+Now, please run the following script on RStudio to install the renv R package:
+```
+install.packages("renv")
+```
+Next, run the following scripts on RStudio to install all the dependent R packages. Please replace ~ with the location of your scAnalyzeR-master unzipped folder: 
+```
+renv::consent(provided=TRUE)
+setwd("~/scAnalyzeR-master")
+renv::restore() 
+```
+Finally, run the app using RStudio by running the script below:
+shiny::runApp('~/scAnalyzeR-master/')
+After successfully running the scAnalyzeR, the GUI will be displayed automatically.
 <br/>
 # Interface with user manual <br/>
 https://github.com/sarwar-chy/scAnalyzeR/blob/master/user_manual/User_manual_scAnalyzeR.pdf
