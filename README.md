@@ -3,7 +3,7 @@
 
 # How to run the scAnalyzeR?
 There are two different ways to setting up the pipeline in your own machine: 
-#### Way 1: using from Docker image (strongly recommended)
+**Way 1:** using from Docker image (**strongly recommended**)
 1.	Download and install [Docker](https://www.docker.com/products/docker-desktop)
 2.	Pull the docker image by running the following command:
   ```
@@ -18,12 +18,12 @@ There are two different ways to setting up the pipeline in your own machine:
   ```
   http://localhost:3838/
   ```
-#### Way 2: using from source
+**Way 2:** using from source
 Firstly, you need to download and install following softwares (install R then RStudio): <br/>
 Download and install R and RStudio on your machine, <br/>
 i.	Download and install R (v-3.6.2 or above): https://cran.r-project.org/ <br/>
 ii.	Download and install RStudio: RStudio (v-1.1.456 or above): https://rstudio.com/products/rstudio/download/ <br/>
-After installing the R and RStudio on your machine successfully, then, you need to clone this (https://github.com/sarwar-chy/scAnalyzeR/archive/master.zip) repository as well as unzip it. <br/>
+After installing the R and RStudio on your machine successfully, then, you need to clone this (https://github.com/sarwarchy20/scAnalyzeR/archive/master.zip) repository as well as unzip it. <br/>
 Now, please run the following script on RStudio to install the **renv** R package: <br/>
 ```
 install.packages("renv")
