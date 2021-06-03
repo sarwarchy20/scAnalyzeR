@@ -18,7 +18,7 @@ There are two different ways to setting up the pipeline in your own machine: <br
   ```
   http://localhost:3838/
   ```
-**Way 2:** using from source
+**Way 2:** using from source <br/>
 Firstly, you need to download and install following softwares (install R then RStudio): <br/>
 Download and install R and RStudio on your machine, <br/>
 i.	Download and install R (v-3.6.2 or above): https://cran.r-project.org/ <br/>
