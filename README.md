@@ -18,6 +18,10 @@ There are two different ways to setting up the pipeline in your own machine: <br
   ```
   http://localhost:3838/
   ```
+  If you are new in Docker and interested to learn more, there are enormous tutorials including the followings: <br/>
+  *  [Docker for beginners](https://docker-curriculum.com/) 
+  *  [More about docker](https://www.youtube.com/watch?v=6aBsjT5HoGY)
+  
 **Way 2:** using from source <br/>
 Firstly, you need to download and install following softwares (install R then RStudio): <br/>
 Download and install R and RStudio on your machine, <br/>
