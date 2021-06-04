@@ -1,7 +1,8 @@
 
 #library(pryr)
-
+library(renv)
 library(shiny)
+library(glue)
 library(shinyjs)
 library(ggfortify)
 library(ggplot2)
@@ -28,7 +29,7 @@ library(fgsea)
 library(org.Hs.eg.db) 
 library(org.Mm.eg.db) 
 library(GO.db)
-#library(pathview)
+library(pathview)
 library(gage)
 library(monocle)
 library("Matrix")
