@@ -3,7 +3,7 @@
 #use_python("C:/Program Files/Python37/python.exe")
 
 
-source("install_dependencies_scAnalyzer.R")
+#source("install_dependencies_scAnalyzer.R")
 source("load_packages.R")
 source("ui.R")
 
@@ -107,7 +107,7 @@ server <- function(input, output,session) {
       
       
       p1<- str_sub(input$file_10x$datapath[1], end=-6)
-      p11<- paste(p1, sep = "", "barcodes.tsv")
+      p11<- paste(p1, sep = "", "matrix.mtx")
       file.rename(from =input$file_10x$datapath[1], to = p11)
       
       q1<- str_sub(input$file_10x$datapath[2], end=-6)
@@ -115,7 +115,7 @@ server <- function(input, output,session) {
       file.rename(from =input$file_10x$datapath[2], to = q11)
       
       r1<- str_sub(input$file_10x$datapath[3], end=-6)
-      r11<- paste(r1, sep = "", "matrix.mtx")
+      r11<- paste(r1, sep = "", "barcodes.tsv")
       file.rename(from =input$file_10x$datapath[3], to = r11)
       
       pbmc.data_10x<- Read10X(data.dir = str_sub(input$file_10x$datapath[1], end=-6))
@@ -176,7 +176,7 @@ server <- function(input, output,session) {
     # n <- 100
     #
     # for (i in 1:n) {
-    isolate({
+    shiny::isolate({
       in_data<- new2_data()
       total_col<-ncol(in_data)
       names(in_data)<- gsub("_",".", names(in_data))
@@ -291,7 +291,7 @@ server <- function(input, output,session) {
   pbmcf<-reactive({
     if(input$th == FALSE) return()
     
-    isolate({
+    shiny::isolate({
       tpbmc<-pbmc()
       
       tpbmc[["MTg"]]<- input$pmt
@@ -346,7 +346,7 @@ server <- function(input, output,session) {
   nor_pbmc<-reactive({
     #if(is.null(pbmcf())) return()
     if(input$nor_ok ==FALSE) return()
-    isolate({
+    shiny::isolate({
       nor_data<-NormalizeData(object = pbmcf(), normalization.method = input$nor_method, 
                               scale.factor = input$nor_factor,display.progress = TRUE)
       nor_data
@@ -368,7 +368,7 @@ server <- function(input, output,session) {
   hv_pbmc<-reactive({
     if(is.null(nor_pbmc())) return()
     else if(input$hvg_ok == FALSE) return()
-    isolate({
+    shiny::isolate({
       # temp_hvg<-FindVariableGenes(object = nor_pbmc(), mean.function = ExpMean, dispersion.function = LogVMR, 
       #x.low.cutoff = 0.0125, x.high.cutoff = 3, y.cutoff = 0.5,top.genes = input$top_vgenes)
       temp_hvg<-FindVariableFeatures(object = nor_pbmc(), selection.method = "vst", 
@@ -443,7 +443,7 @@ server <- function(input, output,session) {
   pc_pbmc<-reactive({
     #if(is.null(hv_pbmc())) return()
     if(input$com_pca==FALSE) return()
-    isolate({
+    shiny::isolate({
       
       if(input$pc_genes == "pc_hvg")
       {
@@ -494,7 +494,7 @@ server <- function(input, output,session) {
     if(is.null(pc_pbmc())) return() 
     else if(input$ck_tsne_plot==FALSE) return() #hide("sc_pca_plot")
     t_tsne<- RunTSNE(object = pc_pbmc(), reduction = "pca", 
-                     dims.use = 1:input$pcs_no, do.fast = TRUE)
+                     dims.use = 1:input$pc_cells, do.fast = TRUE)
     DimPlot(object = t_tsne, reduction = "tsne")
     
   })
@@ -562,7 +562,7 @@ server <- function(input, output,session) {
   clus_pbmc<-reactive({
     if(is.null(pc_pbmc())) return()
     else if (input$clus_ok == FALSE) return()
-    isolate({
+    shiny::isolate({
       if(input$clus_algo == "Louvain Algorithm(LA)")
         algo_type = 1
       else if(input$clus_algo == "Multilevel LA")
@@ -599,7 +599,7 @@ server <- function(input, output,session) {
   output$clus_tsne_plot<-renderPlot({
     if(is.null(clus_pbmc())) return()
     else if (input$clus_tsne == FALSE) return()
-    isolate({
+    shiny::isolate({
       
       # Calculate number of cells per cluster from object@ident
       cell.num <- table(Idents(clus_pbmc()))
@@ -660,7 +660,7 @@ server <- function(input, output,session) {
   output$clus_umap_plot<-renderPlot({
     if(is.null(clus_pbmc())) return()
     else if (input$clus_umap == FALSE) return()
-    isolate({
+    shiny::isolate({
       #DimPlot(object = clus_pbmc(), reduction = "umap")
       UMAPPlot(clus_pbmc())
     })
@@ -967,7 +967,7 @@ server <- function(input, output,session) {
   all_markers<-reactive({
     #if(is.null(clus_pbmc())) return()
     if(input$all_de_ok == FALSE) return()
-    isolate({
+    shiny::isolate({
       
       FindAllMarkers(clus_pbmc(), assay = NULL, features = NULL,
                      logfc.threshold = 0, test.use = input$all_de_test, slot = "data",
@@ -1270,7 +1270,7 @@ server <- function(input, output,session) {
   scluster_markers<-reactive({
     if(is.null(clus_pbmc())) return()
     else if (input$sde_ok == FALSE) return()
-    isolate({
+    shiny::isolate({
       resd<-FindMarkers(clus_pbmc(), ident.1 = input$sclst1,
                         group.by = NULL, subset.ident = NULL, assay = NULL,
                         slot = "data", reduction = NULL, features = NULL,
@@ -1394,7 +1394,7 @@ server <- function(input, output,session) {
     if(is.null(clus_pbmc())) return()
     else if (input$de_ok == FALSE) return()
     
-    isolate({
+    shiny::isolate({
       cls_Num1<-unlist(strsplit(input$clst1, ","))
       
       cls_Numi1<-as.integer(cls_Num1)
@@ -1563,7 +1563,7 @@ server <- function(input, output,session) {
     #else if(is.null(scluster_markers())) return()
     if(input$path_submit == FALSE) return()
     spc_code<- switch(input$species_name, species_human = 'hsa', species_mouse = 'mmu')
-    isolate({
+    shiny::isolate({
       if(input$path_source == "path_KEGG")
       {
         
@@ -1643,7 +1643,7 @@ server <- function(input, output,session) {
     
     if(is.null(input_paths())) return()
     spc_code_sym<- switch(input$species_name, species_human = 'Hs', species_mouse = 'Mm')
-    isolate({
+    shiny::isolate({
       # get gene symbols; mouse = 'Mm', human = 'Hs'
       SYMBOL2EG <-
         eval(parse(text = sprintf(
@@ -1653,13 +1653,11 @@ server <- function(input, output,session) {
       if(input$path_input_opt == "path_clus")
       {
         tde<- scluster_markers()
-        #tde<- tde[order(-tde$avg_logFC),]
       }
       
       else if(input$path_input_opt == "path_clus_vs_clus")
       {
         tde<- cluster_markers()
-        #tde<- tde[order(-tde$avg_logFC),]
         
         
       }
@@ -1729,7 +1727,7 @@ server <- function(input, output,session) {
     # select top paths
     ggdat<- ftr_res %>% head(input$path_top) %>% mutate(pathway =fct_inorder(pathway))
     
-    isolate({
+    shiny::isolate({
       if(input$path_source == "path_GO")
       {
         tt0<- "GO (Biological Process)Pathways"
@@ -1880,13 +1878,11 @@ server <- function(input, output,session) {
     if(input$path_input_opt == "path_clus")
     {
       tde_data<- scluster_markers()
-      #tde_data<- tde_data[order(-tde_data$avg_logFC),]
     }
     
     else if(input$path_input_opt == "path_clus_vs_clus")
     {
       tde_data<- cluster_markers()
-      #tde_data<- tde_data[order(-tde_data$avg_logFC),]
       
     }
     
@@ -1954,24 +1950,6 @@ server <- function(input, output,session) {
     if(is.null(path_genes())) return()
     else if(input$path_hmap==FALSE) return()
     
-    #if(input$path_input_opt == "path_clus")
-    #{
-     # tde_data_2<- scluster_markers()
-     # tde_data_2<- tde_data_2[path_genes(),]
-      #tde_data_2<- tde_data_2[order(-tde_data_2$avg_logFC),]
-      #print(rownames(tde_data_2))
-      #print(tde_data_2)
-    #}
-    
-    #else if(input$path_input_opt == "path_clus_vs_clus")
-    #{
-     # tde_data_2<- cluster_markers()
-      #tde_data_2<- tde_data_2[path_genes(),]
-      #tde_data_2<- tde_data_2[order(-tde_data_2$avg_logFC),]
-    #}
-    
-    #print(rownames(tde_data_2))
-    #path_genes_i<- rownames(tde_data_2)
     DoHeatmap(clus_pbmc(), features = path_genes() , group.bar = T) + 
       ggtitle(paste("Pathway Name:", path_title))
   })
@@ -2421,7 +2399,7 @@ server <- function(input, output,session) {
     #print(tray_input_genes())
     ptdata<- tray_data()
     #genex1<- c("GAPDH", "TP53")
-    isolate({
+    shiny::isolate({
       
       withProgress(message = 'Generating plot...', value = 0, {
         
