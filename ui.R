@@ -28,7 +28,7 @@ library(fgsea)
 library(org.Hs.eg.db) 
 library(org.Mm.eg.db) 
 library(GO.db)
-#library(pathview)
+library(pathview)
 library(gage)
 library(monocle)
 library("Matrix")
@@ -122,7 +122,7 @@ ui <-shinyUI(
                             p('  Welcome to scAnalyzeR!'),
                             tags$br(),
                             "  Please follow the instructions to perform your task successfully:",
-                            a("User manual ",target="_blank",href="User_manual_scAnalyzeR.pdf")
+                            a("User manual ",target="_blank",href="User_manual_scAnalyzeR_1_0.pdf")
                             #verbatimTextOutput("inst")
                    ),
                    tabPanel("Upload Dataset", 
@@ -319,12 +319,6 @@ ui <-shinyUI(
                                          checkboxInput('ck_pca',p('PCA Plot')),
                                          #tags$hr(),
                                          checkboxInput('ck_tsne_plot',p('t-SNE Plot')),
-                                         
-                                         conditionalPanel('input.ck_tsne_plot==1',
-                                                          "Please select PCs for the t-SNE plot",
-                                                         br(),
-                                                         column(width=12,numericInput("pcs_no", "Number of PCs:", 1 ,min = 1, max = Inf))
-                                                         ),
                                          #tags$hr(),
                                          checkboxInput('pc_print',p('Print PCA')),
                                          # tags$hr(),
@@ -508,8 +502,7 @@ ui <-shinyUI(
                                                    ), # end of sidebarPanel for Static Heatmap
                                                    
                                                    
-                                                   #column(width =8,  br(),br(), plotOutput("sta_hmap", height = '800px'))
-                                                   column(width =12,  br(),br(), plotOutput("sta_hmap"))
+                                                   column(width =8,  br(),br(), plotOutput("sta_hmap", height = '800px'))
                                                    
                                           ), # End of tabPanel for Static Heatmap
                                           
