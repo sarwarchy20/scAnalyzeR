@@ -5,14 +5,14 @@
 There are two different ways to setting up the pipeline in your own machine: <br/>
 **Way 1:** using from Docker image (**strongly recommended**)
 1.	Download and install [Docker](https://www.docker.com/products/docker-desktop)
-2.	Pull the docker image by running the following command:
+2.	Pull the docker image from Docker Hub by running the following command:
   ```
-   docker pull gscdocker/scanalyzer:1.0 
+   docker pull gscdocker/scanalyzer:latest
   ```
 3.	Run the docker image locally on your computer and access the link: <br/>
   To run the docker image, execute the following command:
   ```
-  docker run -d --rm -p 3838:3838 gscdocker/scanalyzer:1.0
+  docker run -d --rm -p 3838:3838 gscdocker/scanalyzer:latest
   ```
   After running the docker image successfully, open the following link on a web browser (e.g., Firefox, Google Chrome) to access the pipeline: 
   ```
@@ -47,8 +47,3 @@ After successfully running the scAnalyzeR, the GUI will be displayed automatical
 # Interface with user manual <br/>
 Click the link below to download/view the full 47 pages usage manual <br/>
 [Usage Manual](https://github.com/sarwarchy20/scAnalyzeR/blob/master/user_manual/User_manual_scAnalyzeR_1_0.pdf)
-
-
-
-
-
