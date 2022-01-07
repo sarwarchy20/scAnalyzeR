@@ -105,20 +105,81 @@ server <- function(input, output,session) {
       
       #write.table(temp1,"filtered_gene_bc_matrices/hg19/ttt_3.tsv",row.names =F,quote = F)
       
-      
+      # First file selection
       p1<- str_sub(input$file_10x$datapath[1], end=-6)
-      p11<- paste(p1, sep = "", "matrix.mtx")
-      file.rename(from =input$file_10x$datapath[1], to = p11)
+      #print(input$file_10x$datapath[1])
+      #print(input$file_10x$name[1])
+      #print(input$file_10x$name[2])
+      #print(input$file_10x$name[3])
       
-      q1<- str_sub(input$file_10x$datapath[2], end=-6)
-      q11<- paste(q1, sep = "", "genes.tsv")
-      file.rename(from =input$file_10x$datapath[2], to = q11)
+      if(input$file_10x$name[1]== "matrix.mtx")
+        {
+          p11<- paste(p1, sep = "", "matrix.mtx")
+          file.rename(from =input$file_10x$datapath[1],
+                      to = p11)
+      }
       
-      r1<- str_sub(input$file_10x$datapath[3], end=-6)
-      r11<- paste(r1, sep = "", "barcodes.tsv")
-      file.rename(from =input$file_10x$datapath[3], to = r11)
+      else if (input$file_10x$name[1]== "barcodes.tsv")
+        {
+        p11<- paste(p1, sep = "", "barcodes.tsv")
+        file.rename(from =input$file_10x$datapath[1],
+                    to = p11)
+      }
+      else
+      {
+        p11<- paste(p1, sep = "","genes.tsv")
+        file.rename(from =input$file_10x$datapath[1],
+                    to = p11)
+      }
+      print(p11)
+      # Second file selection
+      p1<- NULL
+      p1<- str_sub(input$file_10x$datapath[2], end=-6)
+      if(input$file_10x$name[2]== "matrix.mtx")
+      {
+        p11<- paste(p1, sep = "", "matrix.mtx")
+        file.rename(from =input$file_10x$datapath[2],
+                    to = p11)
+      }
       
+      else if (input$file_10x$name[2]== "barcodes.tsv")
+      {
+        p11<- paste(p1, sep = "", "barcodes.tsv")
+        file.rename(from =input$file_10x$datapath[2],
+                    to = p11)
+      }
+      else
+      {
+        p11<- paste(p1, sep = "","genes.tsv")
+        file.rename(from =input$file_10x$datapath[2],
+                    to = p11)
+      }
+      print(p11)
+      # Third file selection
+      p1<- NULL
+      p1<- str_sub(input$file_10x$datapath[3], end=-6)
+      if(input$file_10x$name[3]== "matrix.mtx")
+      {
+        p11<- paste(p1, sep = "", "matrix.mtx")
+        file.rename(from =input$file_10x$datapath[3],
+                    to = p11)
+      }
+      
+      else if (input$file_10x$name[3]== "barcodes.tsv")
+      {
+        p11<- paste(p1, sep = "", "barcodes.tsv")
+        file.rename(from =input$file_10x$datapath[3],
+                    to = p11)
+      }
+      else
+      {
+        p11<- paste(p1, sep = "","genes.tsv")
+        file.rename(from =input$file_10x$datapath[3],
+                    to = p11)
+      }
+      print(p11)
       pbmc.data_10x<- Read10X(data.dir = str_sub(input$file_10x$datapath[1], end=-6))
+      ##unlink(str_sub(input$file_10x$datapath[1], end=-6), recursive = TRUE) # will delete directory 
       data.matrix(pbmc.data_10x)
       
     }
@@ -712,7 +773,7 @@ server <- function(input, output,session) {
                          
                          img(src = "line_font1.png"),
                          p('Find markers (differentially expressed genes) for all clusters, 
-                           click the âFind All markersâ button.'),
+                           click the Ã¢ÂÂFind All markersÃ¢ÂÂ button.'),
                          sidebarPanel(id = "allclus_slid", width = 6, height = 1000, 
                                       tags$style("#allclus_slid{background-color:#F6F9CD;}"),
                                       br(),
@@ -883,7 +944,7 @@ server <- function(input, output,session) {
                          p('Find markers by cluster(s) versus cluster(s).
                            The cluster number must be separated by a comma, and 
                            no common cluster number is allowed as an input for both textboxes. 
-                           If the same cluster number is written in both input boxes, it will be shown an error message, âError: No features pass logfc.threshold thresholdâ.'),
+                           If the same cluster number is written in both input boxes, it will be shown an error message, Ã¢ÂÂError: No features pass logfc.threshold thresholdÃ¢ÂÂ.'),
                          sidebarPanel(id = "fclus_slid2",width = 6, 
                                       tags$style("#fclus_slid2{background-color:#DAF3DA;}"),
                                       "Please select parameters:",
