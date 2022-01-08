@@ -772,8 +772,8 @@ server <- function(input, output,session) {
                 tabPanel("Find all markers",
                          
                          img(src = "line_font1.png"),
-                         p('Find markers (differentially expressed genes) for all clusters, 
-                           click the Ã¢ÂÂFind All markersÃ¢ÂÂ button.'),
+                         p('Find markers (differentially expressed (DE) genes) for all clusters, 
+                           click the "Find All markers" button.'),
                          sidebarPanel(id = "allclus_slid", width = 6, height = 1000, 
                                       tags$style("#allclus_slid{background-color:#F6F9CD;}"),
                                       br(),
@@ -943,8 +943,8 @@ server <- function(input, output,session) {
                          img(src = "line_font1.png"),
                          p('Find markers by cluster(s) versus cluster(s).
                            The cluster number must be separated by a comma, and 
-                           no common cluster number is allowed as an input for both textboxes. 
-                           If the same cluster number is written in both input boxes, it will be shown an error message, Ã¢ÂÂError: No features pass logfc.threshold thresholdÃ¢ÂÂ.'),
+                           no common cluster number is allowed as an input in both textboxes. 
+                           If the same cluster number is written in both input boxes, it will be shown an error message, "Error: No features pass logfc.threshold threshold"'),
                          sidebarPanel(id = "fclus_slid2",width = 6, 
                                       tags$style("#fclus_slid2{background-color:#DAF3DA;}"),
                                       "Please select parameters:",
@@ -1825,7 +1825,7 @@ server <- function(input, output,session) {
     
   })
   
-  # Show Path list
+  # Show filtered path list
   output$path_list_table = DT::renderDataTable({
     if(is.null(output_paths())) return()
     else if(input$path_list_show == FALSE) return() 
@@ -1866,8 +1866,17 @@ server <- function(input, output,session) {
       tags$head(
         tags$style(HTML('#path_all_download{background-color:#800080;color:white;}'))
       )
-      downloadButton("path_all_download", "Download All Pathways as a csv")
+      downloadButton("path_all_download","Download All Pathways as csv")
     }
+  })
+  
+  # Show All Pathway list, both positive and negative, without filtering .........
+  output$all_path_list_table = DT::renderDataTable({
+    if(is.null(output_paths())) return()
+    else if(input$all_path_list_show == FALSE) return() 
+    
+    all_paths <- output_paths() %>% as.data.frame %>% as_data_frame %>% arrange(-NES)
+    all_paths[,1:7]
   })
   
   # Download All Pathways list .........
@@ -1886,7 +1895,7 @@ server <- function(input, output,session) {
       tags$head(
         tags$style(HTML('#path_ftr_download{background-color:#800080;color:white;}'))
       )
-      downloadButton("path_ftr_download", "Download Filtered Pathways as a csv")
+      downloadButton("path_ftr_download", "Download Filtered Pathways as csv")
     }
   })
   
