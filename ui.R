@@ -170,7 +170,7 @@ ui <-shinyUI(
                                          
                                          conditionalPanel(
                                            condition = "input.sor_data == 'data_10x'", 
-                                           fileInput("file_10x", label = "Choose 3 files (barcodes.tsv, genes.tsv, and matrix.mtx)",
+                                           fileInput("file_10x", label = "Choose 3 files (barcodes.tsv, genes.tsv, and matrix.mtx); RAR/compressed/zip files are not allowed!",
                                                      multiple = TRUE
                                            )
                                          )
@@ -562,10 +562,10 @@ ui <-shinyUI(
                             img(src = "line_font.png"),
                             sidebarPanel(id = "path_slid" ,width = 4,
                                          tags$style("#path_slid{background-color:#EEA6F4;}"),
-                                         radioButtons("path_input_opt", h4("Select DE Genes"),
+                                         radioButtons("path_input_opt", h4("Select DE genes (based on previously identified in the Differential Expression step)"),
                                                       
-                                                      choices = c('Cluster Specific DE Genes' = "path_clus",
-                                                                  'Cluster(s) vs Cluster(s) DE Genes' = "path_clus_vs_clus"),
+                                                      choices = c('Cluster specific DE genes (identified in the "Find markers by cluster") ' = "path_clus",
+                                                                  'Cluster(s) vs Cluster(s) DE genes (identified in the "Find markers by clusters vs other clusters)"' = "path_clus_vs_clus"),
                                                       selected = "path_clus"),
                                          
                                          #choices = c('All DE Genes' = "path_all_de",
@@ -583,32 +583,33 @@ ui <-shinyUI(
                                          ),
                                          actionButton('path_submit', 'Compute Pathways'),
                                          br(),br(),
-                                         
+                                         tags$hr(),
+                                         checkboxInput('all_path_list_show',h4('Show All Pathways (both positive and negative)')),
                                          uiOutput("path_download_UI"),
-                                         br(),
-                                         br(),
-                                         #conditionalPanel('input.path_submit==1',
                                          
+                                         tags$hr(),
+                                         p('Apply filtering'),
+                                         
+                                         numericInput("path_qval","Filter: padj<=input value", 0.1, min = 0,max = Inf),
                                          
                                          radioButtons("path_select", p("Select Pathways"),
                                                       choices = c('Positive Pathways' = "path_pos",
                                                                   'Negative pathways' = "path_neg"),
                                                       selected = "path_pos"),
                                          
-                                         numericInput("path_qval","Cutoff: padj(<= cutoff)", 0.1, min = 0,max = Inf),                 
                                          
                                          uiOutput("path_ftr_download_UI"),
                                          
-                                         checkboxInput('path_top_plot',h4('Show Pathways(plot)')),
+                                         checkboxInput('path_top_plot',h4('Show Pathway(s) plot')),
                                          conditionalPanel('input.path_top_plot==1',
-                                                          numericInput("path_top","Top Pathways:", 10, min = 1,max = Inf)
+                                                          numericInput("path_top","Select number of pathways(from Top):", 10, min = 1,max = Inf)
                                          ),
                                          
-                                         checkboxInput('path_list_show',h4('Show Pathways list')),
+                                         checkboxInput('path_list_show',h4('Show Filtered Pathways')),
                                          
                                          checkboxInput("path_genesets",p('Show Gene sets')),
                                          conditionalPanel('input.path_genesets==1',
-                                                          numericInput("path_no","Pathway No.:", 1, min = 1,max = Inf),
+                                                          numericInput("path_no","Select a Pathway (row number):", 1, min = 1,max = Inf),
                                                           radioButtons("path_hmap_genes", p("Select Gene Set"),
                                                                        choices = c('Significant Genes Only' = "path_hmap_genes_sig",
                                                                                    'All Genes ' = "path_hmap_genes_all"),
@@ -625,6 +626,8 @@ ui <-shinyUI(
                                          
                                          
                             ), # end of sidebarPanel for Pathways
+                            
+                            column(width =6,br(), br(),DT::dataTableOutput("all_path_list_table")),
                             column(width =6,br(), br(),DT::dataTableOutput("path_list_table")),
                             column(width =12, br(), br(), plotOutput("path_show")),
                             column(width = 8, br(),verbatimTextOutput("path_gene_list")),
