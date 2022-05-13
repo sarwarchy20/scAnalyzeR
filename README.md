@@ -7,7 +7,7 @@ There are two different ways to setting up the pipeline in your own machine: <br
 1.	Download and install [Docker](https://www.docker.com/products/docker-desktop)
 2.	Pull the docker image from Docker Hub by running the following command:
   ```
-   docker pull gscdocker/scanalyzer:latest
+ docker pull gscdocker/scanalyzer:latest
   ```
 3.	Run the docker image locally on your computer and access the link: <br/>
   To run the docker image, execute the following command:
