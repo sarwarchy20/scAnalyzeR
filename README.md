@@ -47,3 +47,4 @@ After successfully running the scAnalyzeR, the GUI will be displayed automatical
 # Interface with user manual <br/>
 Click the link below to download/view the full 47 pages usage manual <br/>
 [Usage Manual](https://github.com/sarwarchy20/scAnalyzeR/blob/master/user_manual/User_manual_scAnalyzeR_1_0.pdf)
+
