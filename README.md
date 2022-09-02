@@ -1,6 +1,9 @@
 #                                                              scAnalyzeR
 **scAnalyzeR:** a comprehensive software package with graphical user interface for single-cell RNA sequencing analysis
 
+### Overview
+We have developed a scAnalyzeR, a scRNA-seq analysis pipeline with an interactive and user-friendly graphical interface for analyzing and visualizing scRNA-seq data. It accepts scRNA-seq data from various technology platforms, e.g., 10X genomics, Fluidigm or SMART-seq, and different model organisms (human and mouse), and allows flexibility in input file format. It provides functionalities for data preprocessing, quality control, basic summary statistics, dimension reduction, unsupervised clustering, differential gene expression, gene set enrichment analysis, correlation analysis, pseudotime cell trajectory inference and various visualization plots. It also provides default parameters for easy usage and allows a wide range of flexibility and optimization by accepting user-defined options.
+
 # How to run the scAnalyzeR?
 There are two different ways to setting up the pipeline in your own machine: <br/>
 **Way 1:** using from Docker image (**strongly recommended**)
